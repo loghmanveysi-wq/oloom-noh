@@ -1,10 +1,12 @@
 // صفحه اصلی: نوار بالا با عکس استاد، کارت خوش‌آمدگویی، و ۱۵ کارت فصل
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../theme/app_theme.dart';
 import '../models/chapter_model.dart';
 import 'teacher_profile_screen.dart';
 import 'chapter_detail_screen.dart';
 import 'virtual_lab_screen.dart';
+import 'content_manager_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -50,6 +52,21 @@ class HomeScreen extends StatelessWidget {
                 ),
               ),
             ),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.admin_panel_settings, color: Colors.white),
+                tooltip: 'پنل مدیریت محتوا',
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ContentManagerScreen()),
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.logout, color: Colors.white),
+                tooltip: 'خروج از حساب',
+                onPressed: () => FirebaseAuth.instance.signOut(),
+              ),
+            ],
           ),
           SliverPadding(
             padding: const EdgeInsets.all(16),
@@ -93,7 +110,6 @@ class HomeScreen extends StatelessWidget {
           } else if (index == 4) {
             Navigator.push(context, MaterialPageRoute(builder: (_) => const TeacherProfileScreen()));
           }
-          // شاخص ۱ (کتاب) و ۲ (آزمون) در مرحله بعد به صفحات مرتبط وصل می‌شوند
         },
         destinations: const [
           NavigationDestination(icon: Icon(Icons.home), label: 'خانه'),
