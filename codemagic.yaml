@@ -1,0 +1,40 @@
+workflows:
+  android-apk:
+    name: Android APK
+    instance_type: linux_x2
+    max_build_duration: 60
+    environment:
+      flutter: 3.24.5
+      groups:
+        - firebase
+    scripts:
+      - name: Create Android project
+        script: |
+          flutter create . --platforms=android --org com.veisi --project-name oloom_noh
+      - name: Set package name
+        script: |
+          mkdir -p android/app/src/main/kotlin/com/veisi/oloomnoh
+          mv android/app/src/main/kotlin/com/veisi/oloom_noh/MainActivity.kt android/app/src/main/kotlin/com/veisi/oloomnoh/MainActivity.kt
+          rmdir android/app/src/main/kotlin/com/veisi/oloom_noh
+          grep -rl "com.veisi.oloom_noh" android | xargs sed -i.bak "s/com\.veisi\.oloom_noh/com.veisi.oloomnoh/g"
+          find android -name "*.bak" -delete
+      - name: Add Firebase config
+        script: |
+          echo "$GOOGLE_SERVICES_JSON" > android/app/google-services.json
+          sed -i.bak '/id "com.android.application" version/a\
+              id "com.google.gms.google-services" version "4.3.15" apply false' android/settings.gradle
+          sed -i.bak '/id "com.android.application"/a\
+              id "com.google.gms.google-services"' android/app/build.gradle
+          find android -name "*.bak" -delete
+          grep -n "google-services" android/settings.gradle android/app/build.gradle
+      - name: Android permissions
+        script: |
+          M=android/app/src/main/AndroidManifest.xml
+          perl -0pi -e 's|<application|<uses-permission android:name="android.permission.INTERNET"/>\n    <uses-permission android:name="android.permission.CAMERA"/>\n    <application|' $M
+          perl -0pi -e 's|</application>|<activity android:name="com.yalantis.ucrop.UCropActivity" android:screenOrientation="portrait" android:theme="\@style/Theme.AppCompat.Light.NoActionBar"/>\n    </application>|' $M
+      - name: Get packages
+        script: flutter pub get
+      - name: Build APK
+        script: flutter build apk --release
+    artifacts:
+      - build/app/outputs/flutter-apk/*.apk
