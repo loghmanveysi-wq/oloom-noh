@@ -61,12 +61,12 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
     final cropped = await ImageCropper().cropImage(
       sourcePath: picked.path,
       aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
+      cropStyle: CropStyle.circle,
       uiSettings: [
         AndroidUiSettings(
           toolbarTitle: 'برش عکس پروفایل',
           toolbarColor: AppTheme.primaryBlue,
           toolbarWidgetColor: Colors.white,
-          cropStyle: CropStyle.circle,
         ),
       ],
     );
