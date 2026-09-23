@@ -1,0 +1,55 @@
+// قوانین امنیتی Firestore
+// این کد را در Firebase Console > Firestore Database > Rules قرار دهید
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isTeacher() {
+      return isSignedIn() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'teacher';
+    }
+
+    // هر کاربر فقط داده خودش را می‌بیند و می‌نویسد؛ دبیر به همه دسترسی خواندن دارد
+    match /users/{userId} {
+      allow read: if isSignedIn() && (request.auth.uid == userId || isTeacher());
+      allow write: if isSignedIn() && request.auth.uid == userId;
+
+      match /{subcollection=**} {
+        allow read: if isSignedIn() && (request.auth.uid == userId || isTeacher());
+        allow write: if isSignedIn() && request.auth.uid == userId;
+      }
+    }
+
+    // پروفایل استاد: خواندن برای همه، نوشتن فقط خود دبیر
+    match /teachers/{teacherId} {
+      allow read: if true;
+      allow write: if isTeacher();
+    }
+
+    // کتاب‌ها و تصاویر: خواندن برای همه کاربران وارد شده، نوشتن فقط دبیر
+    match /books/{bookId} {
+      allow read: if isSignedIn();
+      allow write: if isTeacher();
+    }
+
+    match /images/{chapterId}/{document=**} {
+      allow read: if isSignedIn();
+      allow write: if isTeacher();
+    }
+
+    match /quizzes/{document=**} {
+      allow read: if isSignedIn();
+      allow write: if isTeacher();
+    }
+
+    match /reports/{document=**} {
+      allow read: if isTeacher();
+      allow write: if isTeacher();
+    }
+  }
+}
