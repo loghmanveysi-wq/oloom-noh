@@ -5,7 +5,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 
 import 'theme/app_theme.dart';
 import 'services/theme_provider.dart';
-import 'screens/home_screen.dart';
+import 'screens/auth_wrapper.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -40,7 +40,7 @@ class OloomNohApp extends StatelessWidget {
                 child: child!,
               );
             },
-            home: const HomeScreen(),
+            home: const AuthWrapper(),
           );
         },
       ),
