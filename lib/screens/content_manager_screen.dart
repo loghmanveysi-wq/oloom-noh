@@ -300,13 +300,17 @@ class _AddBookTab extends StatefulWidget {
 class _AddBookTabState extends State<_AddBookTab> {
   int? _chapterIndex;
   final _titleController = TextEditingController();
-  File? _pickedFile;
+  PlatformFile? _pickedFile;
   bool _uploading = false;
 
   Future<void> _pickFile() async {
-    final result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['pdf']);
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf'],
+      withData: false,
+    );
     if (result != null && result.files.single.path != null) {
-      setState(() => _pickedFile = File(result.files.single.path!));
+      setState(() => _pickedFile = result.files.single);
     }
   }
 
@@ -319,7 +323,8 @@ class _AddBookTabState extends State<_AddBookTab> {
     setState(() => _uploading = true);
     final chapterId = 'chapter_${_chapterIndex! + 1}';
     try {
-      final url = await CloudinaryService.uploadFile(_pickedFile!, folder: 'books/$chapterId');
+      final file = File(_pickedFile!.path!);
+      final url = await CloudinaryService.uploadFile(file, folder: 'books/$chapterId');
       await FirebaseFirestore.instance.collection('books').add({
         'title': _titleController.text.trim(),
         'chapter': chapterId,
