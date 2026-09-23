@@ -11,30 +11,42 @@ dependencies:
     sdk: flutter
   cupertino_icons: ^1.0.6
 
+  # Firebase (بدون Storage - چون Storage نیاز به پلن Blaze دارد)
   firebase_core: ^2.27.0
   firebase_auth: ^4.17.4
   cloud_firestore: ^4.15.4
   firebase_messaging: ^14.7.15
   firebase_analytics: ^10.8.5
 
+  # State management
   provider: ^6.1.2
   flutter_riverpod: ^2.5.1
 
+  # PDF
   syncfusion_flutter_pdfviewer: ^24.2.9
   syncfusion_flutter_xlsio: ^24.2.9
   pdfx: ^2.6.0
 
+  # عکس و فایل
   image_picker: ^1.0.7
   image_cropper: ^5.0.1
   file_picker: ^6.2.0
   cached_network_image: ^3.3.1
 
+  # آفلاین و ذخیره‌سازی محلی
   hive: ^2.2.3
   hive_flutter: ^1.1.0
 
+  # نمودار
   fl_chart: ^0.66.2
+
+  # فونت و RTL
   google_fonts: ^6.2.1
+
+  # AI
   http: ^1.2.1
+
+  # ابزار
   intl: ^0.19.0
   shared_preferences: ^2.2.2
   uuid: ^4.3.3
@@ -48,14 +60,3 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-  assets:
-    - assets/images/
-    - assets/data/
-  fonts:
-    - family: Vazirmatn
-      fonts:
-        - asset: assets/fonts/Vazirmatn-Regular.ttf
-        - asset: assets/fonts/Vazirmatn-Bold.ttf
-          weight: 700
-        - asset: assets/fonts/Vazirmatn-Medium.ttf
-          weight: 500
