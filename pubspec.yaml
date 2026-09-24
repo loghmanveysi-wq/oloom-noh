@@ -24,9 +24,10 @@ dependencies:
   # PDF
   syncfusion_flutter_pdfviewer: ^24.2.8
 
-  # عکس
+  # عکس و فایل
   image_picker: ^1.0.7
   image_cropper: ^5.0.1
+  file_picker: ^6.2.0
   cached_network_image: ^3.3.1
 
   # ذخیره‌سازی محلی
