@@ -1,9 +1,9 @@
+
 // پنل مدیریت محتوا: افزودن سؤال آزمون، تصویر فصل، و PDF کتاب
 // بدون نیاز به رفتن به Firebase Console
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../theme/app_theme.dart';
 import '../models/chapter_model.dart';
@@ -300,43 +300,32 @@ class _AddBookTab extends StatefulWidget {
 class _AddBookTabState extends State<_AddBookTab> {
   int? _chapterIndex;
   final _titleController = TextEditingController();
-  PlatformFile? _pickedFile;
-  bool _uploading = false;
+  final _urlController = TextEditingController();
+  bool _saving = false;
 
-  Future<void> _pickFile() async {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['pdf'],
-      withData: false,
-    );
-    if (result != null && result.files.single.path != null) {
-      setState(() => _pickedFile = result.files.single);
-    }
-  }
-
-  Future<void> _upload() async {
-    if (_chapterIndex == null || _pickedFile == null || _titleController.text.trim().isEmpty) {
+  Future<void> _save() async {
+    if (_chapterIndex == null ||
+        _titleController.text.trim().isEmpty ||
+        _urlController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('فصل، عنوان و فایل PDF را وارد کنید')));
+          .showSnackBar(const SnackBar(content: Text('فصل، عنوان و لینک PDF را وارد کنید')));
       return;
     }
-    setState(() => _uploading = true);
+    setState(() => _saving = true);
     final chapterId = 'chapter_${_chapterIndex! + 1}';
     try {
-      final file = File(_pickedFile!.path!);
-      final url = await CloudinaryService.uploadFile(file, folder: 'books/$chapterId');
       await FirebaseFirestore.instance.collection('books').add({
         'title': _titleController.text.trim(),
         'chapter': chapterId,
-        'pdfUrl': url,
+        'pdfUrl': _urlController.text.trim(),
         'uploadedAt': FieldValue.serverTimestamp(),
       });
       if (mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('PDF با موفقیت اضافه شد ✅')));
+            .showSnackBar(const SnackBar(content: Text('کتاب با موفقیت ثبت شد ✅')));
         setState(() {
-          _pickedFile = null;
           _titleController.clear();
+          _urlController.clear();
         });
       }
     } catch (e) {
@@ -344,7 +333,7 @@ class _AddBookTabState extends State<_AddBookTab> {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خطا: $e')));
       }
     } finally {
-      setState(() => _uploading = false);
+      setState(() => _saving = false);
     }
   }
 
@@ -355,6 +344,19 @@ class _AddBookTabState extends State<_AddBookTab> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppTheme.primaryBlue.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Text(
+              'راهنما: اول فایل PDF را در سایت Cloudinary (بخش Media Library) آپلود کنید، '
+              'سپس لینک آن (secure_url) را اینجا paste کنید.',
+              style: TextStyle(fontSize: 13),
+            ),
+          ),
+          const SizedBox(height: 16),
           const Text('انتخاب فصل', style: TextStyle(fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
           DropdownButtonFormField<int>(
@@ -372,21 +374,24 @@ class _AddBookTabState extends State<_AddBookTab> {
             decoration: const InputDecoration(labelText: 'عنوان کتاب/جزوه', border: OutlineInputBorder()),
           ),
           const SizedBox(height: 16),
-          OutlinedButton.icon(
-            onPressed: _pickFile,
-            icon: const Icon(Icons.picture_as_pdf),
-            label: Text(_pickedFile == null ? 'انتخاب فایل PDF' : 'فایل انتخاب شد ✓'),
+          TextField(
+            controller: _urlController,
+            decoration: const InputDecoration(
+              labelText: 'لینک PDF (از Cloudinary)',
+              hintText: 'https://res.cloudinary.com/...',
+              border: OutlineInputBorder(),
+            ),
           ),
           const SizedBox(height: 12),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: _uploading ? null : _upload,
-              child: _uploading
+              onPressed: _saving ? null : _save,
+              child: _saving
                   ? const SizedBox(
                       height: 20, width: 20,
                       child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                  : const Text('آپلود PDF'),
+                  : const Text('ثبت کتاب'),
             ),
           ),
         ],
