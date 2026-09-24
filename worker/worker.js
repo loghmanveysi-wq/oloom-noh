@@ -1,3 +1,4 @@
+// نسخه به‌روزشده - trigger build
 // واسط چت هوش مصنوعی علوم نهم (Cloudflare Workers AI)
 const SYSTEM_PROMPT =
   "تو دستیار آموزشی درس علوم تجربی پایه نهم ایران هستی. " +
