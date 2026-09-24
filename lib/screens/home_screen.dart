@@ -1,4 +1,4 @@
-// صفحه اصلی: ۱۵ فصل کتاب، دکمه خروج، و دکمه مدیریت (فقط برای دبیر)
+// صفحه اصلی: ۱۵ فصل، دکمه خروج، و دکمه مدیریت (فقط دبیر)
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../models/chapter_model.dart';
@@ -27,12 +27,13 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
+  void _go(Widget page) {
+    Navigator.push(context, MaterialPageRoute(builder: (_) => page));
+  }
+
   void _openAdminMenu() {
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
       builder: (ctx) => SafeArea(
         child: Wrap(
           children: [
@@ -41,10 +42,7 @@ class _HomeScreenState extends State<HomeScreen> {
               title: const Text('گزارش‌ها و داشبورد'),
               onTap: () {
                 Navigator.pop(ctx);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const AdminDashboardScreen()),
-                );
+                _go(const AdminDashboardScreen());
               },
             ),
             ListTile(
@@ -52,10 +50,7 @@ class _HomeScreenState extends State<HomeScreen> {
               title: const Text('مدیریت محتوا (PDF، تصاویر، آزمون)'),
               onTap: () {
                 Navigator.pop(ctx);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const ContentManagerScreen()),
-                );
+                _go(const ContentManagerScreen());
               },
             ),
           ],
@@ -87,96 +82,72 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          SliverAppBar(
-            expandedHeight: 130,
-            pinned: true,
-            flexibleSpace: FlexibleSpaceBar(
-              background: Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [AppTheme.primaryBlue, Color(0xFF1E88E5)],
-                    begin: Alignment.topRight,
-                    end: Alignment.bottomLeft,
+      appBar: AppBar(
+        title: const Text('علوم نهم – استاد ویسی'),
+        leading: IconButton(
+          icon: const Icon(Icons.person),
+          onPressed: () => _go(const TeacherProfileScreen()),
+        ),
+        actions: [
+          if (_isTeacher)
+            IconButton(
+              tooltip: 'مدیریت',
+              icon: const Icon(Icons.admin_panel_settings),
+              onPressed: _openAdminMenu,
+            ),
+          IconButton(
+            tooltip: 'خروج',
+            icon: const Icon(Icons.logout),
+            onPressed: _logout,
+          ),
+        ],
+      ),
+      body: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: scienceGrade9Chapters.length,
+        itemBuilder: (context, index) {
+          final title = scienceGrade9Chapters[index];
+          return Card(
+            child: ListTile(
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              leading: CircleAvatar(
+                backgroundColor: AppTheme.accentOrange.withOpacity(0.15),
+                child: Text(
+                  '${index + 1}',
+                  style: const TextStyle(
+                    color: AppTheme.accentOrange,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-                padding: const EdgeInsets.fromLTRB(20, 50, 12, 16),
-                child: Row(
-                  children: [
-                    GestureDetector(
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const TeacherProfileScreen()),
-                      ),
-                      child: const CircleAvatar(
-                        radius: 26,
-                        backgroundColor: Colors.white,
-                        child: Icon(Icons.person, color: AppTheme.primaryBlue),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    const Expanded(
-                      child: Text(
-                        'علوم نهم – استاد ویسی',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    if (_isTeacher)
-                      IconButton(
-                        tooltip: 'مدیریت',
-                        icon: const Icon(Icons.admin_panel_settings, color: Colors.white),
-                        onPressed: _openAdminMenu,
-                      ),
-                    IconButton(
-                      tooltip: 'خروج',
-                      icon: const Icon(Icons.logout, color: Colors.white),
-                      onPressed: _logout,
-                    ),
-                  ],
-                ),
+              ),
+              title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
+              subtitle: const Padding(
+                padding: EdgeInsets.only(top: 6),
+                child: LinearProgressIndicator(value: 0, minHeight: 6),
+              ),
+              trailing: const Icon(Icons.chevron_left),
+              onTap: () => _go(
+                ChapterDetailScreen(chapterIndex: index, chapterTitle: title),
               ),
             ),
-          ),
-          SliverPadding(
-            padding: const EdgeInsets.all(16),
-            sliver: SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  final title = scienceGrade9Chapters[index];
-                  return Card(
-                    child: ListTile(
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      leading: CircleAvatar(
-                        backgroundColor: AppTheme.accentOrange.withOpacity(0.15),
-                        child: Text(
-                          '${index + 1}',
-                          style: const TextStyle(
-                            color: AppTheme.accentOrange,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
-                      subtitle: const Padding(
-                        padding: EdgeInsets.only(top: 6),
-                        child: LinearProgressIndicator(value: 0, minHeight: 6),
-                      ),
-                      trailing: const Icon(Icons.chevron_left),
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => ChapterDetailScreen(
-                            chapterIndex: index,
-                            chapterTitle: title,
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                },
-                childCount: scienceGra
+          );
+        },
+      ),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: 0,
+        onDestinationSelected: (i) {
+          if (i == 3) _go(const VirtualLabScreen());
+          if (i == 4) _go(const TeacherProfileScreen());
+        },
+        destinations: const [
+          NavigationDestination(icon: Icon(Icons.home), label: 'خانه'),
+          NavigationDestination(icon: Icon(Icons.menu_book), label: 'کتاب'),
+          NavigationDestination(icon: Icon(Icons.quiz), label: 'آزمون'),
+          NavigationDestination(icon: Icon(Icons.science), label: 'آزمایشگاه'),
+          NavigationDestination(icon: Icon(Icons.person), label: 'پروفایل'),
+        ],
+      ),
+    );
+  }
+}
