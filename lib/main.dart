@@ -1,26 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 import 'theme/app_theme.dart';
 import 'services/theme_provider.dart';
-import 'screens/auth_wrapper.dart';
+import 'screens/home_screen.dart';
+import 'screens/login_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  ErrorWidget.builder = (details) => Material(
-        color: Colors.red,
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Text(
-              details.exceptionAsString(),
-              style: const TextStyle(color: Colors.white, fontSize: 14),
-            ),
-          ),
-        ),
-      );
   await Firebase.initializeApp();
   await Hive.initFlutter();
   await Hive.openBox('settingsBox');
@@ -41,6 +31,8 @@ class OloomNohApp extends StatelessWidget {
           return MaterialApp(
             title: 'علوم نهم – استاد ویسی',
             debugShowCheckedModeBanner: false,
+            locale: const Locale('fa', 'IR'),
+            supportedLocales: const [Locale('fa', 'IR')],
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
             themeMode: themeProvider.themeMode,
@@ -50,10 +42,31 @@ class OloomNohApp extends StatelessWidget {
                 child: child!,
               );
             },
-            home: const AuthWrapper(),
+            home: const AuthGate(),
           );
         },
       ),
+    );
+  }
+}
+
+/// اگر کاربر وارد شده باشد صفحه اصلی، وگرنه صفحه ورود
+class AuthGate extends StatelessWidget {
+  const AuthGate({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+        if (snapshot.hasData) return const HomeScreen();
+        return const LoginScreen();
+      },
     );
   }
 }
