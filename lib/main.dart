@@ -41,8 +41,6 @@ class OloomNohApp extends StatelessWidget {
           return MaterialApp(
             title: 'علوم نهم – استاد ویسی',
             debugShowCheckedModeBanner: false,
-            locale: const Locale('fa', 'IR'),
-            supportedLocales: const [Locale('fa', 'IR')],
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
             themeMode: themeProvider.themeMode,
