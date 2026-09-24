@@ -1,53 +1,40 @@
-// سرویس ارتباط با OpenAI API برای دستیار هوشمند علوم
+// سرویس ارتباط با دستیار هوش مصنوعی (Cloudflare Workers AI)
+// این نسخه به‌جای OpenAI مستقیم، از واسط امن Cloudflare Worker استفاده می‌کند
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class AiAssistantService {
-  // ⚠️ کلید API را هرگز مستقیم در کد قرار ندهید؛
-  // از Firebase Remote Config یا یک Cloud Function واسط استفاده کنید
-  // تا کلید در اپ منتشرشده قابل مشاهده نباشد.
-  static const String _apiUrl = 'https://api.openai.com/v1/chat/completions';
+  // آدرس Worker خودتان در Cloudflare
+  static const String _workerUrl = 'https://oloom-ai.loghman-veysi.workers.dev';
 
-  Future<String> askQuestion(String question, {required String apiKey}) async {
+  /// ارسال تاریخچه پیام‌ها و دریافت پاسخ دستیار
+  /// [messages] لیستی از Map با فیلدهای role ('user' یا 'assistant') و content
+  static Future<String> sendMessage(List<Map<String, String>> messages) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      throw Exception('برای استفاده از دستیار هوشمند باید وارد حساب شوید.');
+    }
+
+    final token = await user.getIdToken();
+
     final response = await http.post(
-      Uri.parse(_apiUrl),
+      Uri.parse(_workerUrl),
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer $apiKey',
+        'Authorization': 'Bearer $token',
       },
-      body: jsonEncode({
-        'model': 'gpt-4o-mini',
-        'messages': [
-          {
-            'role': 'system',
-            'content': 'تو دستیار آموزشی علوم تجربی پایه نهم هستی. به فارسی و ساده پاسخ بده.'
-          },
-          {'role': 'user', 'content': question},
-        ],
-      }),
+      body: jsonEncode({'messages': messages}),
     );
 
     if (response.statusCode != 200) {
-      throw Exception('خطا در دریافت پاسخ از دستیار هوشمند');
+      throw Exception('خطا در ارتباط با دستیار هوشمند (کد ${response.statusCode})');
     }
 
     final data = jsonDecode(utf8.decode(response.bodyBytes));
-    final answer = data['choices'][0]['message']['content'] as String;
-
-    // ذخیره سؤال و پاسخ برای پنل دبیر
-    final uid = FirebaseAuth.instance.currentUser?.uid ?? 'guest';
-    await FirebaseFirestore.instance
-        .collection('users')
-        .doc(uid)
-        .collection('aiQuestions')
-        .add({
-      'question': question,
-      'answer': answer,
-      'timestamp': FieldValue.serverTimestamp(),
-    });
-
-    return answer;
+    if (data['error'] != null) {
+      throw Exception('خطا: ${data['error']}');
+    }
+    return data['reply'] ?? '';
   }
 }
