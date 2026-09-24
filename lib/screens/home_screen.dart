@@ -1,15 +1,88 @@
-// صفحه اصلی: نوار بالا با عکس استاد، کارت خوش‌آمدگویی، و ۱۵ کارت فصل
+// صفحه اصلی: ۱۵ فصل کتاب، دکمه خروج، و دکمه مدیریت (فقط برای دبیر)
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import '../theme/app_theme.dart';
 import '../models/chapter_model.dart';
+import '../services/auth_service.dart';
 import 'teacher_profile_screen.dart';
 import 'chapter_detail_screen.dart';
 import 'virtual_lab_screen.dart';
+import 'admin_dashboard_screen.dart';
 import 'content_manager_screen.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  bool _isTeacher = false;
+
+  @override
+  void initState() {
+    super.initState();
+    AuthService.isTeacher().then((v) {
+      if (mounted) setState(() => _isTeacher = v);
+    });
+  }
+
+  void _openAdminMenu() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Wrap(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.bar_chart, color: AppTheme.primaryBlue),
+              title: const Text('گزارش‌ها و داشبورد'),
+              onTap: () {
+                Navigator.pop(ctx);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const AdminDashboardScreen()),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.upload_file, color: AppTheme.accentOrange),
+              title: const Text('مدیریت محتوا (PDF، تصاویر، آزمون)'),
+              onTap: () {
+                Navigator.pop(ctx);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ContentManagerScreen()),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _logout() async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        content: const Text('از حساب خود خارج می‌شوید؟'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('انصراف'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('خروج'),
+          ),
+        ],
+      ),
+    );
+    if (ok == true) await AuthService.signOut();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +101,7 @@ class HomeScreen extends StatelessWidget {
                     end: Alignment.bottomLeft,
                   ),
                 ),
-                padding: const EdgeInsets.fromLTRB(20, 50, 20, 16),
+                padding: const EdgeInsets.fromLTRB(20, 50, 12, 16),
                 child: Row(
                   children: [
                     GestureDetector(
@@ -44,29 +117,30 @@ class HomeScreen extends StatelessWidget {
                     ),
                     const SizedBox(width: 12),
                     const Expanded(
-                      child: Text('علوم نهم – استاد ویسی',
-                          style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                      child: Text(
+                        'علوم نهم – استاد ویسی',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
-                    const Icon(Icons.notifications_none, color: Colors.white),
+                    if (_isTeacher)
+                      IconButton(
+                        tooltip: 'مدیریت',
+                        icon: const Icon(Icons.admin_panel_settings, color: Colors.white),
+                        onPressed: _openAdminMenu,
+                      ),
+                    IconButton(
+                      tooltip: 'خروج',
+                      icon: const Icon(Icons.logout, color: Colors.white),
+                      onPressed: _logout,
+                    ),
                   ],
                 ),
               ),
             ),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.admin_panel_settings, color: Colors.white),
-                tooltip: 'پنل مدیریت محتوا',
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const ContentManagerScreen()),
-                ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.logout, color: Colors.white),
-                tooltip: 'خروج از حساب',
-                onPressed: () => FirebaseAuth.instance.signOut(),
-              ),
-            ],
           ),
           SliverPadding(
             padding: const EdgeInsets.all(16),
@@ -79,7 +153,13 @@ class HomeScreen extends StatelessWidget {
                       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       leading: CircleAvatar(
                         backgroundColor: AppTheme.accentOrange.withOpacity(0.15),
-                        child: Text('${index + 1}', style: const TextStyle(color: AppTheme.accentOrange, fontWeight: FontWeight.bold)),
+                        child: Text(
+                          '${index + 1}',
+                          style: const TextStyle(
+                            color: AppTheme.accentOrange,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                       title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
                       subtitle: const Padding(
@@ -90,35 +170,13 @@ class HomeScreen extends StatelessWidget {
                       onTap: () => Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => ChapterDetailScreen(chapterIndex: index, chapterTitle: title),
+                          builder: (_) => ChapterDetailScreen(
+                            chapterIndex: index,
+                            chapterTitle: title,
+                          ),
                         ),
                       ),
                     ),
                   );
                 },
-                childCount: scienceGrade9Chapters.length,
-              ),
-            ),
-          ),
-        ],
-      ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: 0,
-        onDestinationSelected: (index) {
-          if (index == 3) {
-            Navigator.push(context, MaterialPageRoute(builder: (_) => const VirtualLabScreen()));
-          } else if (index == 4) {
-            Navigator.push(context, MaterialPageRoute(builder: (_) => const TeacherProfileScreen()));
-          }
-        },
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.home), label: 'خانه'),
-          NavigationDestination(icon: Icon(Icons.menu_book), label: 'کتاب'),
-          NavigationDestination(icon: Icon(Icons.quiz), label: 'آزمون'),
-          NavigationDestination(icon: Icon(Icons.science), label: 'آزمایشگاه'),
-          NavigationDestination(icon: Icon(Icons.person), label: 'پروفایل'),
-        ],
-      ),
-    );
-  }
-}
+                childCount: scienceGra
