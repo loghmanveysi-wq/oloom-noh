@@ -9,6 +9,18 @@ import 'screens/auth_wrapper.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  ErrorWidget.builder = (details) => Material(
+        color: Colors.red,
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Text(
+              details.exceptionAsString(),
+              style: const TextStyle(color: Colors.white, fontSize: 14),
+            ),
+          ),
+        ),
+      );
   await Firebase.initializeApp();
   await Hive.initFlutter();
   await Hive.openBox('settingsBox');
