@@ -27,13 +27,13 @@ class AiAssistantService {
       body: jsonEncode({'messages': messages}),
     );
 
-    if (response.statusCode != 200) {
-      throw Exception('خطا در ارتباط با دستیار هوشمند (کد ${response.statusCode})');
-    }
-
     final data = jsonDecode(utf8.decode(response.bodyBytes));
+    if (response.statusCode != 200) {
+      throw Exception(
+          'خطا (کد ${response.statusCode}): ${data['error'] ?? 'نامشخص'} ${data['detail'] ?? ''}');
+    }
     if (data['error'] != null) {
-      throw Exception('خطا: ${data['error']}');
+      throw Exception('خطا: ${data['error']} ${data['detail'] ?? ''}');
     }
     return data['reply'] ?? '';
   }
