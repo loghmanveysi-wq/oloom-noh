@@ -1,4 +1,3 @@
-// نسخه به‌روزشده - trigger build
 // واسط چت هوش مصنوعی علوم نهم (Cloudflare Workers AI)
 const SYSTEM_PROMPT =
   "تو دستیار آموزشی درس علوم تجربی پایه نهم ایران هستی. " +
@@ -24,9 +23,11 @@ async function verifyUser(token, apiKey) {
       body: JSON.stringify({ idToken: token }),
     }
   );
-  if (!res.ok) return null;
   const data = await res.json();
-  return data.users && data.users[0] ? data.users[0] : null;
+  if (!res.ok) {
+    return { error: true, detail: JSON.stringify(data).slice(0, 300) };
+  }
+  return { error: false, user: data.users && data.users[0] ? data.users[0] : null };
 }
 
 export default {
@@ -37,8 +38,13 @@ export default {
     const token = auth.startsWith("Bearer ") ? auth.slice(7) : "";
     if (!token) return json({ error: "no-token" }, 401);
 
-    const user = await verifyUser(token, env.FIREBASE_API_KEY);
-    if (!user) return json({ error: "bad-token" }, 401);
+    const check = await verifyUser(token, env.FIREBASE_API_KEY);
+    if (check.error) {
+      return json({ error: "google-error", detail: check.detail }, 401);
+    }
+    if (!check.user) {
+      return json({ error: "bad-token", detail: "no user in response" }, 401);
+    }
 
     let body;
     try {
