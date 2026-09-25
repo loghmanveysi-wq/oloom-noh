@@ -4,5 +4,8 @@
   "compatibility_date": "2026-09-24",
   "ai": {
     "binding": "AI"
+  },
+  "vars": {
+    "FIREBASE_API_KEY": "AIzaSyDHQ_PDVlOw-f1VLavfNLSg7LOFk5YQepc"
   }
 }
