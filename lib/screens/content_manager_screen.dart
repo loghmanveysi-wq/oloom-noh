@@ -1,4 +1,3 @@
-
 // پنل مدیریت محتوا: افزودن سؤال آزمون، تصویر فصل، و PDF کتاب
 // بدون نیاز به رفتن به Firebase Console
 import 'dart:io';
@@ -288,7 +287,7 @@ class _AddImageTabState extends State<_AddImageTab> {
 }
 
 // -------------------------------------------------
-// تب ۳: افزودن PDF کتاب
+// تب ۳: افزودن PDF کتاب (مستقل از فصل‌ها - کتاب کامل)
 // -------------------------------------------------
 class _AddBookTab extends StatefulWidget {
   const _AddBookTab();
@@ -298,33 +297,46 @@ class _AddBookTab extends StatefulWidget {
 }
 
 class _AddBookTabState extends State<_AddBookTab> {
-  int? _chapterIndex;
-  final _titleController = TextEditingController();
+  final _titleController = TextEditingController(text: 'کتاب علوم نهم');
   final _urlController = TextEditingController();
   bool _saving = false;
+  String? _currentUrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCurrent();
+  }
+
+  Future<void> _loadCurrent() async {
+    final doc = await FirebaseFirestore.instance.collection('books').doc('full_book').get();
+    final data = doc.data();
+    if (data != null && mounted) {
+      setState(() {
+        _currentUrl = data['pdfUrl'];
+        if (data['title'] != null) _titleController.text = data['title'];
+      });
+    }
+  }
 
   Future<void> _save() async {
-    if (_chapterIndex == null ||
-        _titleController.text.trim().isEmpty ||
-        _urlController.text.trim().isEmpty) {
+    if (_titleController.text.trim().isEmpty || _urlController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('فصل، عنوان و لینک PDF را وارد کنید')));
+          .showSnackBar(const SnackBar(content: Text('عنوان و لینک PDF را وارد کنید')));
       return;
     }
     setState(() => _saving = true);
-    final chapterId = 'chapter_${_chapterIndex! + 1}';
     try {
-      await FirebaseFirestore.instance.collection('books').add({
+      await FirebaseFirestore.instance.collection('books').doc('full_book').set({
         'title': _titleController.text.trim(),
-        'chapter': chapterId,
         'pdfUrl': _urlController.text.trim(),
         'uploadedAt': FieldValue.serverTimestamp(),
       });
       if (mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('کتاب با موفقیت ثبت شد ✅')));
+            .showSnackBar(const SnackBar(content: Text('کتاب با موفقیت ثبت/به‌روزرسانی شد ✅')));
         setState(() {
-          _titleController.clear();
+          _currentUrl = _urlController.text.trim();
           _urlController.clear();
         });
       }
@@ -351,33 +363,32 @@ class _AddBookTabState extends State<_AddBookTab> {
               borderRadius: BorderRadius.circular(10),
             ),
             child: const Text(
-              'راهنما: اول فایل PDF را در سایت Cloudinary (بخش Media Library) آپلود کنید، '
-              'سپس لینک آن (secure_url) را اینجا paste کنید.',
+              'راهنما: کل فایل PDF کتاب علوم نهم را اول در سایت Cloudinary (بخش Media Library) آپلود کنید، '
+              'سپس لینک آن (secure_url) را اینجا paste کنید. این کتاب مستقل از فصل‌هاست و در بخش «کتاب» نمایش داده می‌شود.',
               style: TextStyle(fontSize: 13),
             ),
           ),
           const SizedBox(height: 16),
-          const Text('انتخاب فصل', style: TextStyle(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
-          DropdownButtonFormField<int>(
-            value: _chapterIndex,
-            decoration: const InputDecoration(border: OutlineInputBorder()),
-            items: List.generate(
-              scienceGrade9Chapters.length,
-              (i) => DropdownMenuItem(value: i, child: Text('فصل ${i + 1}: ${scienceGrade9Chapters[i]}')),
+          if (_currentUrl != null && _currentUrl!.isNotEmpty) ...[
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.green.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Text('کتاب فعلی ثبت شده است ✅', style: TextStyle(color: Colors.green.shade800)),
             ),
-            onChanged: (v) => setState(() => _chapterIndex = v),
-          ),
-          const SizedBox(height: 16),
+            const SizedBox(height: 16),
+          ],
           TextField(
             controller: _titleController,
-            decoration: const InputDecoration(labelText: 'عنوان کتاب/جزوه', border: OutlineInputBorder()),
+            decoration: const InputDecoration(labelText: 'عنوان کتاب', border: OutlineInputBorder()),
           ),
           const SizedBox(height: 16),
           TextField(
             controller: _urlController,
             decoration: const InputDecoration(
-              labelText: 'لینک PDF (از Cloudinary)',
+              labelText: 'لینک PDF جدید (از Cloudinary)',
               hintText: 'https://res.cloudinary.com/...',
               border: OutlineInputBorder(),
             ),
@@ -391,7 +402,7 @@ class _AddBookTabState extends State<_AddBookTab> {
                   ? const SizedBox(
                       height: 20, width: 20,
                       child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                  : const Text('ثبت کتاب'),
+                  : const Text('ثبت / به‌روزرسانی کتاب'),
             ),
           ),
         ],
