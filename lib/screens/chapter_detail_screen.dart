@@ -1,9 +1,8 @@
-// صفحه جزئیات هر فصل: PDF، گالری تصاویر، خلاصه، آزمون پایان فصل
+// صفحه جزئیات هر فصل: مطلب آموزشی، گالری تصاویر، آزمون پایان فصل
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../theme/app_theme.dart';
-import 'pdf_viewer_screen.dart';
 import 'quiz_screen.dart';
 
 class ChapterDetailScreen extends StatelessWidget {
@@ -29,32 +28,6 @@ class ChapterDetailScreen extends StatelessWidget {
           children: [
             _actionCard(
               context,
-              icon: Icons.picture_as_pdf,
-              color: AppTheme.primaryBlue,
-              label: 'مطالعه PDF این فصل',
-              onTap: () async {
-                final book = await FirebaseFirestore.instance
-                    .collection('books')
-                    .where('chapter', isEqualTo: chapterId)
-                    .limit(1)
-                    .get();
-                if (book.docs.isEmpty) return;
-                final data = book.docs.first.data();
-                if (!context.mounted) return;
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => PdfViewerScreen(
-                      title: chapterTitle,
-                      pdfUrl: data['pdfUrl'],
-                      bookId: book.docs.first.id,
-                    ),
-                  ),
-                );
-              },
-            ),
-            _actionCard(
-              context,
               icon: Icons.quiz,
               color: AppTheme.accentOrange,
               label: 'آزمون پایان فصل',
@@ -62,6 +35,29 @@ class ChapterDetailScreen extends StatelessWidget {
                 context,
                 MaterialPageRoute(builder: (_) => QuizScreen(chapterId: chapterId, chapterTitle: chapterTitle)),
               ),
+            ),
+            const SizedBox(height: 20),
+            const Text('📝 مطلب آموزشی فصل', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 10),
+            StreamBuilder<DocumentSnapshot>(
+              stream: FirebaseFirestore.instance.collection('chapterContent').doc(chapterId).snapshots(),
+              builder: (context, snapshot) {
+                final data = snapshot.data?.data() as Map<String, dynamic>?;
+                final content = data?['content'] as String?;
+                if (content == null || content.trim().isEmpty) {
+                  return const Text('هنوز مطلبی برای این فصل ثبت نشده است.',
+                      style: TextStyle(color: Colors.grey));
+                }
+                return Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryBlue.withOpacity(0.06),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(content, style: const TextStyle(fontSize: 15, height: 1.8)),
+                );
+              },
             ),
             const SizedBox(height: 20),
             const Text('🖼️ گالری تصاویر آموزشی فصل', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
@@ -79,7 +75,8 @@ class ChapterDetailScreen extends StatelessWidget {
                 }
                 final docs = snapshot.data!.docs;
                 if (docs.isEmpty) {
-                  return const Text('هنوز تصویری برای این فصل بارگذاری نشده است.');
+                  return const Text('هنوز تصویری برای این فصل بارگذاری نشده است.',
+                      style: TextStyle(color: Colors.grey));
                 }
                 return GridView.builder(
                   shrinkWrap: true,
