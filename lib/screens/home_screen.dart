@@ -9,6 +9,7 @@ import 'virtual_lab_screen.dart';
 import 'content_manager_screen.dart';
 import 'ai_chat_screen.dart';
 import 'book_list_screen.dart';
+import 'admin_dashboard_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -55,6 +56,14 @@ class HomeScreen extends StatelessWidget {
               ),
             ),
             actions: [
+              IconButton(
+                icon: const Icon(Icons.bar_chart, color: Colors.white),
+                tooltip: 'آمار و دانش‌آموزان',
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const AdminDashboardScreen()),
+                ),
+              ),
               IconButton(
                 icon: const Icon(Icons.smart_toy_outlined, color: Colors.white),
                 tooltip: 'دستیار هوشمند',
