@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../theme/app_theme.dart';
+import 'admin_login_screen.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -37,6 +38,7 @@ class _AuthScreenState extends State<AuthScreen> {
           email: _emailController.text.trim(),
           password: _passwordController.text.trim(),
         );
+        // ذخیره اطلاعات پایه دانش‌آموز در Firestore
         await FirebaseFirestore.instance.collection('users').doc(cred.user!.uid).set({
           'name': _nameController.text.trim(),
           'class': _classController.text.trim(),
@@ -62,6 +64,8 @@ class _AuthScreenState extends State<AuthScreen> {
         return 'کاربری با این ایمیل یافت نشد.';
       case 'wrong-password':
         return 'رمز عبور اشتباه است.';
+      case 'invalid-credential':
+        return 'ایمیل یا رمز عبور اشتباه است.';
       case 'email-already-in-use':
         return 'این ایمیل قبلاً ثبت‌نام شده است.';
       case 'weak-password':
@@ -137,6 +141,14 @@ class _AuthScreenState extends State<AuthScreen> {
               TextButton(
                 onPressed: () => setState(() => _isLogin = !_isLogin),
                 child: Text(_isLogin ? 'حساب ندارید؟ ثبت‌نام کنید' : 'حساب دارید؟ وارد شوید'),
+              ),
+              TextButton.icon(
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const AdminLoginScreen()),
+                ),
+                icon: const Icon(Icons.admin_panel_settings, size: 18),
+                label: const Text('ورود مدیر'),
               ),
             ],
           ),
