@@ -71,13 +71,14 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
     final cropped = await ImageCropper().cropImage(
       sourcePath: picked.path,
       aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
+      cropStyle: CropStyle.circle, // ← به اینجا منتقل شد
       uiSettings: [
         AndroidUiSettings(
           toolbarTitle: 'برش عکس پروفایل',
           toolbarColor: AppTheme.primaryBlue,
           toolbarWidgetColor: Colors.white,
-          cropStyle: CropStyle.circle,
         ),
+        IOSUiSettings(title: 'برش عکس پروفایل'),
       ],
     );
     if (cropped == null) return;
@@ -134,26 +135,28 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
                               ? const Icon(Icons.person, size: 60, color: AppTheme.primaryBlue)
                               : null),
                     ),
-                    if (_isAdmin) Positioned(
-                      bottom: 0,
-                      left: 0,
-                      child: InkWell(
-                        onTap: _pickAndUploadImage,
-                        child: const CircleAvatar(
-                          radius: 18,
-                          backgroundColor: AppTheme.accentOrange,
-                          child: Icon(Icons.camera_alt, size: 18, color: Colors.white),
+                    if (_isAdmin)
+                      Positioned(
+                        bottom: 0,
+                        left: 0,
+                        child: InkWell(
+                          onTap: _pickAndUploadImage,
+                          child: const CircleAvatar(
+                            radius: 18,
+                            backgroundColor: AppTheme.accentOrange,
+                            child: Icon(Icons.camera_alt, size: 18, color: Colors.white),
+                          ),
                         ),
                       ),
-                    ),
                   ],
                 ),
                 const SizedBox(height: 12),
-                if (_isAdmin) TextButton.icon(
-                  onPressed: _pickAndUploadImage,
-                  icon: const Icon(Icons.photo_camera),
-                  label: const Text('📷 تغییر عکس پروفایل'),
-                ),
+                if (_isAdmin)
+                  TextButton.icon(
+                    onPressed: _pickAndUploadImage,
+                    icon: const Icon(Icons.photo_camera),
+                    label: const Text('📷 تغییر عکس پروفایل'),
+                  ),
                 const SizedBox(height: 20),
                 _infoCard('نام', data?['name'] ?? 'لقمان ویسی'),
                 _infoCard('سمت', data?['title'] ?? 'دبیر علوم تجربی'),
