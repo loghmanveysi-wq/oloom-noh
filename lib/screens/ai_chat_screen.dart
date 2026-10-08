@@ -66,7 +66,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('دستیار هوشمند علوم')),
+      appBar: AppBar(title: const Text('هوش مصنوعی – دستیار علوم')),
       body: Column(
         children: [
           Expanded(
