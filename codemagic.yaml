@@ -6,8 +6,6 @@ workflows:
     environment:
       flutter: 3.19.6
       java: 17
-      vars:
-        SYNCFUSION_KEY: ""
     scripts:
       - name: ساخت پوشه‌ی android
         script: |
@@ -20,6 +18,10 @@ workflows:
           flutter pub get
       - name: ساخت APK
         script: |
-          flutter build apk --release --split-per-abi --dart-define=SYNCFUSION_KEY=$SYNCFUSION_KEY
+          if [ -n "$SYNCFUSION_KEY" ]; then
+            flutter build apk --release --split-per-abi --dart-define=SYNCFUSION_KEY=$SYNCFUSION_KEY
+          else
+            flutter build apk --release --split-per-abi
+          fi
     artifacts:
       - build/**/outputs/**/*.apk
