@@ -1,5 +1,4 @@
-// پنل مدیریت محتوا: افزودن سؤال آزمون، تصویر فصل، و PDF کتاب
-// بدون نیاز به رفتن به Firebase Console
+// پنل مدیریت محتوا (فقط برای مدیر): خلاصه فصل، جواب فعالیت‌ها، خودآزمایی‌ها، سؤال آزمون، تصویر و PDF
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -7,24 +6,48 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../theme/app_theme.dart';
 import '../models/chapter_model.dart';
 import '../services/cloudinary_service.dart';
+import '../services/admin_service.dart';
+import 'chapter_content_admin.dart';
 
-class ContentManagerScreen extends StatefulWidget {
+class ContentManagerScreen extends StatelessWidget {
   const ContentManagerScreen({super.key});
 
   @override
-  State<ContentManagerScreen> createState() => _ContentManagerScreenState();
+  Widget build(BuildContext context) {
+    return StreamBuilder<bool>(
+      stream: AdminService.isTeacherStream(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(body: Center(child: CircularProgressIndicator()));
+        }
+        if (snapshot.data != true) {
+          return Scaffold(
+            appBar: AppBar(title: const Text('پنل مدیریت محتوا')),
+            body: const Center(child: Text('این بخش فقط برای مدیر است.')),
+          );
+        }
+        return const _ContentManagerBody();
+      },
+    );
+  }
 }
 
-class _ContentManagerScreenState extends State<ContentManagerScreen> {
+class _ContentManagerBody extends StatelessWidget {
+  const _ContentManagerBody();
+
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 3,
+      length: 6,
       child: Scaffold(
         appBar: AppBar(
           title: const Text('پنل مدیریت محتوا'),
           bottom: const TabBar(
+            isScrollable: true,
             tabs: [
+              Tab(text: 'خلاصه فصل'),
+              Tab(text: 'جواب فعالیت‌ها'),
+              Tab(text: 'خودآزمایی‌ها'),
               Tab(text: 'سؤال آزمون'),
               Tab(text: 'تصویر فصل'),
               Tab(text: 'کتاب PDF'),
@@ -33,6 +56,9 @@ class _ContentManagerScreenState extends State<ContentManagerScreen> {
         ),
         body: const TabBarView(
           children: [
+            SummaryAdminTab(),
+            ItemsAdminTab(collection: 'activities', singular: 'فعالیت', titleHint: 'مثلاً: فعالیت صفحه ۱۲'),
+            ItemsAdminTab(collection: 'selfTests', singular: 'خودآزمایی', titleHint: 'مثلاً: خودآزمایی ۱'),
             _AddQuestionTab(),
             _AddImageTab(),
             _AddBookTab(),
@@ -287,7 +313,7 @@ class _AddImageTabState extends State<_AddImageTab> {
 }
 
 // -------------------------------------------------
-// تب ۳: افزودن PDF کتاب (مستقل از فصل‌ها - کتاب کامل)
+// تب ۳: افزودن PDF کتاب
 // -------------------------------------------------
 class _AddBookTab extends StatefulWidget {
   const _AddBookTab();
@@ -334,7 +360,7 @@ class _AddBookTabState extends State<_AddBookTab> {
       });
       if (mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('کتاب با موفقیت ثبت/به‌روزرسانی شد ✅')));
+            .showSnackBar(const SnackBar(content: Text('کتاب با موفقیت ثبت/به\u200cروزرسانی شد \u2705')));
         setState(() {
           _currentUrl = _urlController.text.trim();
           _urlController.clear();
@@ -364,7 +390,7 @@ class _AddBookTabState extends State<_AddBookTab> {
             ),
             child: const Text(
               'راهنما: کل فایل PDF کتاب علوم نهم را اول در سایت Cloudinary (بخش Media Library) آپلود کنید، '
-              'سپس لینک آن (secure_url) را اینجا paste کنید. این کتاب مستقل از فصل‌هاست و در بخش «کتاب» نمایش داده می‌شود.',
+              'سپس لینک آن (secure_url) را اینجا paste کنید. این کتاب مستقل از فصل\u200cهاست و در بخش «کتاب» نمایش داده می\u200cشود.',
               style: TextStyle(fontSize: 13),
             ),
           ),
@@ -376,7 +402,7 @@ class _AddBookTabState extends State<_AddBookTab> {
                 color: Colors.green.withOpacity(0.08),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Text('کتاب فعلی ثبت شده است ✅', style: TextStyle(color: Colors.green.shade800)),
+              child: Text('کتاب فعلی ثبت شده است \u2705', style: TextStyle(color: Colors.green.shade800)),
             ),
             const SizedBox(height: 16),
           ],
@@ -402,7 +428,7 @@ class _AddBookTabState extends State<_AddBookTab> {
                   ? const SizedBox(
                       height: 20, width: 20,
                       child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                  : const Text('ثبت / به‌روزرسانی کتاب'),
+                  : const Text('ثبت / به\u200cروزرسانی کتاب'),
             ),
           ),
         ],
