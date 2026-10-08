@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../theme/app_theme.dart';
+import '../services/admin_service.dart';
 import '../models/chapter_model.dart';
 import 'teacher_profile_screen.dart';
 import 'chapter_detail_screen.dart';
@@ -56,29 +57,45 @@ class HomeScreen extends StatelessWidget {
               ),
             ),
             actions: [
-              IconButton(
-                icon: const Icon(Icons.bar_chart, color: Colors.white),
-                tooltip: 'آمار و دانش‌آموزان',
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const AdminDashboardScreen()),
-                ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.smart_toy_outlined, color: Colors.white),
-                tooltip: 'دستیار هوشمند',
+              TextButton.icon(
                 onPressed: () => Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const AiChatScreen()),
                 ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.admin_panel_settings, color: Colors.white),
-                tooltip: 'پنل مدیریت محتوا',
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const ContentManagerScreen()),
+                icon: const Icon(Icons.smart_toy_outlined, color: Colors.white),
+                label: const Text(
+                  'هوش مصنوعی',
+                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
                 ),
+              ),
+              // آیکون‌های مدیریت فقط برای مدیر (نقش teacher) نمایش داده می‌شوند
+              StreamBuilder<bool>(
+                stream: AdminService.isTeacherStream(),
+                initialData: false,
+                builder: (context, snapshot) {
+                  if (snapshot.data != true) return const SizedBox.shrink();
+                  return Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.bar_chart, color: Colors.white),
+                        tooltip: 'آمار و دانش‌آموزان',
+                        onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const AdminDashboardScreen()),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.admin_panel_settings, color: Colors.white),
+                        tooltip: 'پنل مدیریت محتوا',
+                        onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const ContentManagerScreen()),
+                        ),
+                      ),
+                    ],
+                  );
+                },
               ),
               IconButton(
                 icon: const Icon(Icons.logout, color: Colors.white),
@@ -131,6 +148,7 @@ class HomeScreen extends StatelessWidget {
           } else if (index == 4) {
             Navigator.push(context, MaterialPageRoute(builder: (_) => const TeacherProfileScreen()));
           }
+          // شاخص ۱ (کتاب) و ۲ (آزمون) در مرحله بعد به صفحات مرتبط وصل می‌شوند
         },
         destinations: const [
           NavigationDestination(icon: Icon(Icons.home), label: 'خانه'),
