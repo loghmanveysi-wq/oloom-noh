@@ -1,22 +1,46 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:syncfusion_flutter_core/core.dart';
 
 import 'theme/app_theme.dart';
 import 'services/theme_provider.dart';
-import 'screens/home_screen.dart';
-import 'screens/login_screen.dart';
+import 'screens/auth_wrapper.dart';
+
+// کلید لایسنس Community سینک‌فیوژن (اختیاری). هنگام build با
+// --dart-define=SYNCFUSION_KEY=... داده می‌شود؛ اگر خالی باشد ثبت نمی‌شود.
+const String _syncfusionKey = String.fromEnvironment('SYNCFUSION_KEY');
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
-  await Hive.initFlutter();
+
+  // صفحه‌ی قرمز خطا فقط در حالت توسعه (در نسخه‌ی نهایی به کاربر نشان داده نمی‌شود)
+  if (kDebugMode) {
+    ErrorWidget.builder = (details) => Material(
+          color: Colors.red,
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                details.exceptionAsString(),
+                style: const TextStyle(color: Colors.white, fontSize: 14),
+              ),
+            ),
+          ),
+        );
+  }
+
+  if (_syncfusionKey.isNotEmpty) {
+    SyncfusionLicense.registerLicense(_syncfusionKey);
+  }
+
+  await Future.wait([
+    Firebase.initializeApp(),
+    Hive.initFlutter(),
+  ]);
   await Hive.openBox('settingsBox');
-  await Hive.openBox('progressBox');
-  await Hive.openBox('offlinePdfBox');
   runApp(const OloomNohApp());
 }
 
@@ -32,13 +56,6 @@ class OloomNohApp extends StatelessWidget {
           return MaterialApp(
             title: 'علوم نهم – استاد ویسی',
             debugShowCheckedModeBanner: false,
-            locale: const Locale('fa', 'IR'),
-            supportedLocales: const [Locale('fa', 'IR')],
-            localizationsDelegates: const [
-              GlobalMaterialLocalizations.delegate,
-              GlobalWidgetsLocalizations.delegate,
-              GlobalCupertinoLocalizations.delegate,
-            ],
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
             themeMode: themeProvider.themeMode,
@@ -48,31 +65,10 @@ class OloomNohApp extends StatelessWidget {
                 child: child!,
               );
             },
-            home: const AuthGate(),
+            home: const AuthWrapper(),
           );
         },
       ),
-    );
-  }
-}
-
-/// اگر کاربر وارد شده باشد صفحه اصلی، وگرنه صفحه ورود
-class AuthGate extends StatelessWidget {
-  const AuthGate({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return StreamBuilder<User?>(
-      stream: FirebaseAuth.instance.authStateChanges(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
-        }
-        if (snapshot.hasData) return const HomeScreen();
-        return const LoginScreen();
-      },
     );
   }
 }
