@@ -1,0 +1,5 @@
+سه فایل فونت وزیرمتن را اینجا بگذارید (دقیقاً با همین نام‌ها):
+Vazirmatn-Regular.ttf
+Vazirmatn-Medium.ttf
+Vazirmatn-Bold.ttf
+(بعد از گذاشتن فونت‌ها، همین فایل txt را می‌توانید حذف کنید.)
