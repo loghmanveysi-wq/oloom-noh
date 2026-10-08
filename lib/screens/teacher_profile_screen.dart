@@ -6,6 +6,7 @@ import 'package:image_cropper/image_cropper.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../theme/app_theme.dart';
+import '../services/admin_service.dart';
 import '../services/cloudinary_service.dart';
 
 class TeacherProfileScreen extends StatefulWidget {
@@ -21,6 +22,15 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
 
   // شناسه استاد - در نسخه نهایی از Firebase Auth گرفته می‌شود
   final String teacherId = 'loghman-veisi';
+  bool _isAdmin = false;
+
+  @override
+  void initState() {
+    super.initState();
+    AdminService.isTeacherStream().first.then((v) {
+      if (mounted) setState(() => _isAdmin = v);
+    });
+  }
 
   Future<void> _pickAndUploadImage() async {
     showModalBottomSheet(
@@ -61,12 +71,12 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
     final cropped = await ImageCropper().cropImage(
       sourcePath: picked.path,
       aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
-      cropStyle: CropStyle.circle,
       uiSettings: [
         AndroidUiSettings(
           toolbarTitle: 'برش عکس پروفایل',
           toolbarColor: AppTheme.primaryBlue,
           toolbarWidgetColor: Colors.white,
+          cropStyle: CropStyle.circle,
         ),
       ],
     );
@@ -94,7 +104,7 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
         );
       }
     } finally {
-      setState(() => _uploading = false);
+      if (mounted) setState(() => _uploading = false);
     }
   }
 
@@ -124,7 +134,7 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
                               ? const Icon(Icons.person, size: 60, color: AppTheme.primaryBlue)
                               : null),
                     ),
-                    Positioned(
+                    if (_isAdmin) Positioned(
                       bottom: 0,
                       left: 0,
                       child: InkWell(
@@ -139,7 +149,7 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
                   ],
                 ),
                 const SizedBox(height: 12),
-                TextButton.icon(
+                if (_isAdmin) TextButton.icon(
                   onPressed: _pickAndUploadImage,
                   icon: const Icon(Icons.photo_camera),
                   label: const Text('📷 تغییر عکس پروفایل'),
