@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "761488845394",
+    "project_id": "olom-haftom-veysi",
+    "storage_bucket": "olom-haftom-veysi.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:761488845394:android:caf0f3f298116e8d8fcd8b",
+        "android_client_info": {
+          "package_name": "com.veisi.oloomnoh"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDHQ_PDVlOw-f1VLavfNLSg7L0Fk5YQepc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
