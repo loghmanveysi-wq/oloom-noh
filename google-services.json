@@ -7,6 +7,25 @@
   "client": [
     {
       "client_info": {
+        "mobilesdk_app_id": "1:761488845394:android:3219a4089aa351eb8fcd8b",
+        "android_client_info": {
+          "package_name": "com.veisi.oloom_noh"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDHQ_PDVlOw-f1VLavfNLSg7L0Fk5YQepc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
         "mobilesdk_app_id": "1:761488845394:android:caf0f3f298116e8d8fcd8b",
         "android_client_info": {
           "package_name": "com.veisi.oloomnoh"
