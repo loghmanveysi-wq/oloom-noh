@@ -8,6 +8,7 @@ import '../models/chapter_model.dart';
 import '../services/cloudinary_service.dart';
 import '../services/admin_service.dart';
 import 'chapter_content_admin.dart';
+import 'question_admin.dart';
 
 class ContentManagerScreen extends StatelessWidget {
   const ContentManagerScreen({super.key});
@@ -59,136 +60,11 @@ class _ContentManagerBody extends StatelessWidget {
             SummaryAdminTab(),
             ItemsAdminTab(collection: 'activities', singular: 'فعالیت', titleHint: 'مثلاً: فعالیت صفحه ۱۲'),
             ItemsAdminTab(collection: 'selfTests', singular: 'خودآزمایی', titleHint: 'مثلاً: خودآزمایی ۱'),
-            _AddQuestionTab(),
+            QuestionsAdminTab(),
             _AddImageTab(),
             _AddBookTab(),
           ],
         ),
-      ),
-    );
-  }
-}
-
-// -------------------------------------------------
-// تب ۱: افزودن سؤال آزمون
-// -------------------------------------------------
-class _AddQuestionTab extends StatefulWidget {
-  const _AddQuestionTab();
-
-  @override
-  State<_AddQuestionTab> createState() => _AddQuestionTabState();
-}
-
-class _AddQuestionTabState extends State<_AddQuestionTab> {
-  int? _chapterIndex;
-  final _questionController = TextEditingController();
-  final List<TextEditingController> _optionControllers =
-      List.generate(4, (_) => TextEditingController());
-  int _correctIndex = 0;
-  bool _saving = false;
-
-  Future<void> _save() async {
-    if (_chapterIndex == null || _questionController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('فصل و متن سؤال را وارد کنید')));
-      return;
-    }
-    setState(() => _saving = true);
-    final chapterId = 'chapter_${_chapterIndex! + 1}';
-    try {
-      await FirebaseFirestore.instance
-          .collection('quizzes')
-          .doc(chapterId)
-          .collection('questions')
-          .add({
-        'question': _questionController.text.trim(),
-        'options': _optionControllers.map((c) => c.text.trim()).toList(),
-        'correctIndex': _correctIndex,
-      });
-      if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('سؤال با موفقیت ذخیره شد ✅')));
-        _questionController.clear();
-        for (final c in _optionControllers) {
-          c.clear();
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('خطا: $e')));
-      }
-    } finally {
-      setState(() => _saving = false);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('انتخاب فصل', style: TextStyle(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
-          DropdownButtonFormField<int>(
-            value: _chapterIndex,
-            decoration: const InputDecoration(border: OutlineInputBorder()),
-            items: List.generate(
-              scienceGrade9Chapters.length,
-              (i) => DropdownMenuItem(value: i, child: Text('فصل ${i + 1}: ${scienceGrade9Chapters[i]}')),
-            ),
-            onChanged: (v) => setState(() => _chapterIndex = v),
-          ),
-          const SizedBox(height: 16),
-          const Text('متن سؤال', style: TextStyle(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
-          TextField(
-            controller: _questionController,
-            maxLines: 2,
-            decoration: const InputDecoration(border: OutlineInputBorder()),
-          ),
-          const SizedBox(height: 16),
-          const Text('گزینه‌ها (گزینه درست را با دکمه رادیویی مشخص کنید)',
-              style: TextStyle(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
-          ...List.generate(4, (i) {
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Row(
-                children: [
-                  Radio<int>(
-                    value: i,
-                    groupValue: _correctIndex,
-                    onChanged: (v) => setState(() => _correctIndex = v!),
-                  ),
-                  Expanded(
-                    child: TextField(
-                      controller: _optionControllers[i],
-                      decoration: InputDecoration(
-                        labelText: 'گزینه ${i + 1}',
-                        border: const OutlineInputBorder(),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }),
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: _saving ? null : _save,
-              child: _saving
-                  ? const SizedBox(
-                      height: 20, width: 20,
-                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                  : const Text('ذخیره سؤال'),
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -249,7 +125,7 @@ class _AddImageTabState extends State<_AddImageTab> {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خطا: $e')));
       }
     } finally {
-      setState(() => _uploading = false);
+      if (mounted) setState(() => _uploading = false);
     }
   }
 
@@ -371,7 +247,7 @@ class _AddBookTabState extends State<_AddBookTab> {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خطا: $e')));
       }
     } finally {
-      setState(() => _saving = false);
+      if (mounted) setState(() => _saving = false);
     }
   }
 
