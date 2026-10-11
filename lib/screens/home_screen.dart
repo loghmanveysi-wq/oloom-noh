@@ -10,6 +10,7 @@ import 'virtual_lab_screen.dart';
 import 'content_manager_screen.dart';
 import 'ai_chat_screen.dart';
 import 'book_list_screen.dart';
+import 'exam_list_screen.dart';
 import 'admin_dashboard_screen.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -143,12 +144,13 @@ class HomeScreen extends StatelessWidget {
         onDestinationSelected: (index) {
           if (index == 1) {
             Navigator.push(context, MaterialPageRoute(builder: (_) => const BookListScreen()));
+          } else if (index == 2) {
+            Navigator.push(context, MaterialPageRoute(builder: (_) => const ExamListScreen()));
           } else if (index == 3) {
             Navigator.push(context, MaterialPageRoute(builder: (_) => const VirtualLabScreen()));
           } else if (index == 4) {
             Navigator.push(context, MaterialPageRoute(builder: (_) => const TeacherProfileScreen()));
           }
-          // شاخص ۱ (کتاب) و ۲ (آزمون) در مرحله بعد به صفحات مرتبط وصل می‌شوند
         },
         destinations: const [
           NavigationDestination(icon: Icon(Icons.home), label: 'خانه'),
