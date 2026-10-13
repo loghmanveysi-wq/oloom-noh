@@ -6,6 +6,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../theme/app_theme.dart';
 import '../models/quiz_question.dart';
+import '../services/sound_service.dart';
 
 class QuizScreen extends StatefulWidget {
   final String chapterId;
@@ -106,6 +107,7 @@ class _QuizScreenState extends State<QuizScreen> {
       if (original == item.q.correctIndex) _score++;
       _answers.add(_Answer(item, original));
     });
+    SoundService.play(original == item.q.correctIndex ? Sfx.correct : Sfx.wrong);
   }
 
   void _next() {
@@ -116,6 +118,7 @@ class _QuizScreenState extends State<QuizScreen> {
       });
     } else {
       setState(() => _finished = true);
+      SoundService.play(_score * 2 >= _items!.length ? Sfx.success : Sfx.nav);
       _save();
     }
   }
@@ -216,7 +219,7 @@ class _QuizScreenState extends State<QuizScreen> {
                   ),
                 ],
                 const SizedBox(height: 20),
-                for (final i in item.order) _optionTile(q, i),
+                for (var p = 0; p < item.order.length; p++) _optionTile(q, item.order[p], p),
                 if (_selected != null && q.explanation.trim().isNotEmpty)
                   Container(
                     width: double.infinity,
@@ -248,20 +251,57 @@ class _QuizScreenState extends State<QuizScreen> {
     );
   }
 
-  Widget _optionTile(QuizQuestion q, int i) {
-    Color? color;
-    if (_selected != null) {
-      if (i == q.correctIndex) {
-        color = Colors.green.withOpacity(0.2);
-      } else if (i == _selected) {
-        color = Colors.red.withOpacity(0.2);
+  Widget _optionTile(QuizQuestion q, int i, int pos) {
+    const letters = ['الف', 'ب', 'ج', 'د'];
+    final answered = _selected != null;
+    final isCorrect = i == q.correctIndex;
+    final isChosen = i == _selected;
+    Color? bg;
+    Color border = Colors.transparent;
+    IconData? trailing;
+    Color? tc;
+    if (answered) {
+      if (isCorrect) {
+        bg = Colors.green.withOpacity(0.15);
+        border = Colors.green;
+        trailing = Icons.check_circle;
+        tc = Colors.green;
+      } else if (isChosen) {
+        bg = Colors.red.withOpacity(0.15);
+        border = Colors.red;
+        trailing = Icons.cancel;
+        tc = Colors.red;
       }
     }
     return Card(
-      color: color,
-      child: ListTile(
-        title: Text(q.options[i]),
-        onTap: _selected == null ? () => _select(i) : null,
+      margin: const EdgeInsets.only(bottom: 10),
+      color: bg,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: border, width: 1.6),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: answered ? null : () => _select(i),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Row(
+            children: [
+              CircleAvatar(
+                radius: 16,
+                backgroundColor: (tc ?? AppTheme.primaryBlue).withOpacity(0.15),
+                child: Text(
+                  letters[pos < 4 ? pos : 3],
+                  style: TextStyle(
+                      fontSize: 11, fontWeight: FontWeight.bold, color: tc ?? AppTheme.primaryBlue),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(child: Text(q.options[i], style: const TextStyle(fontSize: 15, height: 1.5))),
+              if (trailing != null) Icon(trailing, color: tc),
+            ],
+          ),
+        ),
       ),
     );
   }
