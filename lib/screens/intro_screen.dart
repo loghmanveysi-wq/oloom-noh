@@ -1,6 +1,7 @@
 // صفحه «خانه» (دکمه‌ی وسط): معرفی نرم‌افزار و معرفی سازنده
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
 import '../theme/app_theme.dart';
@@ -11,6 +12,7 @@ import '../services/theme_provider.dart';
 import 'ai_chat_screen.dart';
 import 'admin_dashboard_screen.dart';
 import 'content_manager_screen.dart';
+import 'student_profile_screen.dart';
 
 class IntroScreen extends StatefulWidget {
   final ValueChanged<int> onNavigate;
@@ -26,6 +28,13 @@ class _IntroScreenState extends State<IntroScreen> {
 
   bool _sound = SoundService.enabled;
   late final Stream<bool> _admin = AdminService.isTeacherStream();
+  late final Stream<DocumentSnapshot<Map<String, dynamic>>>? _me =
+      FirebaseAuth.instance.currentUser == null
+          ? null
+          : FirebaseFirestore.instance
+              .collection('users')
+              .doc(FirebaseAuth.instance.currentUser!.uid)
+              .snapshots();
 
   void _toggleSound() {
     setState(() => _sound = !_sound);
@@ -100,7 +109,7 @@ class _IntroScreenState extends State<IntroScreen> {
             padding: EdgeInsets.fromLTRB(8, top + 4, 8, 28),
             child: Column(
               children: [
-                Row(children: [const Spacer(), ..._topIcons(context)]),
+                Row(children: [_profileButton(), const Spacer(), ..._topIcons(context)]),
                 const SizedBox(height: 4),
                 Container(
                   width: 84,
@@ -128,6 +137,44 @@ class _IntroScreenState extends State<IntroScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  // دکمه‌ی پروفایل دانش‌آموز (بالا سمت راست): حرف اول نام کاربر
+  Widget _profileButton() {
+    return Tooltip(
+      message: 'پروفایل من',
+      child: GestureDetector(
+        onTap: () => _push(const StudentProfileScreen()),
+        child: Container(
+          width: 42,
+          height: 42,
+          margin: const EdgeInsets.symmetric(horizontal: 8),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: Colors.white,
+            border: Border.all(color: Colors.white54, width: 2),
+            boxShadow: const [
+              BoxShadow(color: Color(0x33000000), blurRadius: 8, offset: Offset(0, 3)),
+            ],
+          ),
+          child: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+            stream: _me,
+            builder: (context, snap) {
+              final name = (snap.data?.data()?['name'] ?? '').toString().trim();
+              return Center(
+                child: name.isEmpty
+                    ? const Icon(Icons.person, color: AppTheme.primaryBlue)
+                    : Text(
+                        String.fromCharCode(name.runes.first),
+                        style: const TextStyle(
+                            color: AppTheme.primaryBlue, fontWeight: FontWeight.bold, fontSize: 19),
+                      ),
+              );
+            },
+          ),
+        ),
       ),
     );
   }
