@@ -1,164 +1,207 @@
-// صفحه اصلی: نوار بالا با عکس استاد، کارت خوش‌آمدگویی، و ۱۵ کارت فصل
+// قاب اصلی برنامه: نوار پایین با ۵ دکمه؛ «خانه» در وسط (معرفی نرم‌افزار و سازنده)
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import '../theme/app_theme.dart';
-import '../services/admin_service.dart';
-import '../models/chapter_model.dart';
-import 'teacher_profile_screen.dart';
-import 'chapter_detail_screen.dart';
-import 'virtual_lab_screen.dart';
-import 'content_manager_screen.dart';
-import 'ai_chat_screen.dart';
+import '../services/sound_service.dart';
+import 'learn_screen.dart';
 import 'book_list_screen.dart';
+import 'intro_screen.dart';
 import 'exam_list_screen.dart';
-import 'admin_dashboard_screen.dart';
+import 'virtual_lab_screen.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
   @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  static const int _homeIndex = 2;
+  int _index = _homeIndex;
+  final Set<int> _visited = {_homeIndex};
+
+  void _go(int i) {
+    if (i == _index) return;
+    SoundService.play(Sfx.nav);
+    setState(() {
+      _index = i;
+      _visited.add(i);
+    });
+  }
+
+  Widget _page(int i) {
+    switch (i) {
+      case 0:
+        return const LearnScreen();
+      case 1:
+        return const BookListScreen();
+      case 2:
+        return IntroScreen(onNavigate: _go);
+      case 3:
+        return const ExamListScreen();
+      default:
+        return const VirtualLabScreen();
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          SliverAppBar(
-            expandedHeight: 130,
-            pinned: true,
-            flexibleSpace: FlexibleSpaceBar(
-              background: Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [AppTheme.primaryBlue, Color(0xFF1E88E5)],
-                    begin: Alignment.topRight,
-                    end: Alignment.bottomLeft,
+    return PopScope(
+      canPop: _index == _homeIndex,
+      onPopInvoked: (didPop) {
+        if (!didPop) _go(_homeIndex);
+      },
+      child: Scaffold(
+        body: IndexedStack(
+          index: _index,
+          children: [
+            for (var i = 0; i < 5; i++) _visited.contains(i) ? _page(i) : const SizedBox.shrink(),
+          ],
+        ),
+        bottomNavigationBar: _bottomBar(),
+      ),
+    );
+  }
+
+  Widget _bottomBar() {
+    final theme = Theme.of(context);
+    final barColor = theme.cardTheme.color ?? theme.colorScheme.surface;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SizedBox(
+          height: 78,
+          child: Stack(
+            children: [
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                height: 64,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: barColor,
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.12),
+                        blurRadius: 14,
+                        offset: const Offset(0, -3),
+                      ),
+                    ],
                   ),
                 ),
-                padding: const EdgeInsets.fromLTRB(20, 50, 20, 16),
+              ),
+              Material(
+                type: MaterialType.transparency,
                 child: Row(
                   children: [
-                    GestureDetector(
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const TeacherProfileScreen()),
-                      ),
-                      child: const CircleAvatar(
-                        radius: 26,
-                        backgroundColor: Colors.white,
-                        child: Icon(Icons.person, color: AppTheme.primaryBlue),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    const Expanded(
-                      child: Text('علوم نهم – استاد ویسی',
-                          style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-                    ),
-                    const Icon(Icons.notifications_none, color: Colors.white),
+                    _item(0, Icons.school_rounded, 'آموزش'),
+                    _item(1, Icons.menu_book_rounded, 'کتاب'),
+                    _centerItem(),
+                    _item(3, Icons.quiz_rounded, 'آزمون'),
+                    _item(4, Icons.science_rounded, 'آزمایشگاه'),
                   ],
                 ),
               ),
+            ],
+          ),
+        ),
+        Container(height: MediaQuery.of(context).padding.bottom, color: barColor),
+      ],
+    );
+  }
+
+  Widget _item(int i, IconData icon, String label) {
+    final sel = _index == i;
+    final cs = Theme.of(context).colorScheme;
+    final color = sel ? cs.primary : cs.onSurfaceVariant;
+    return Expanded(
+      child: Align(
+        alignment: Alignment.bottomCenter,
+        child: SizedBox(
+          height: 64,
+          child: InkWell(
+            onTap: () => _go(i),
+            borderRadius: BorderRadius.circular(16),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 220),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: sel ? cs.primary.withOpacity(0.14) : Colors.transparent,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Icon(icon, color: color, size: 24),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: color,
+                    fontWeight: sel ? FontWeight.bold : FontWeight.normal,
+                  ),
+                ),
+              ],
             ),
-            actions: [
-              TextButton.icon(
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const AiChatScreen()),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _centerItem() {
+    final sel = _index == _homeIndex;
+    final cs = Theme.of(context).colorScheme;
+    final colors = sel
+        ? const [AppTheme.accentOrange, Color(0xFFFFA000)]
+        : const [AppTheme.primaryBlue, Color(0xFF42A5F5)];
+    return Expanded(
+      child: Align(
+        alignment: Alignment.bottomCenter,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => _go(_homeIndex),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 220),
+                width: 54,
+                height: 54,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    colors: colors,
+                    begin: Alignment.topRight,
+                    end: Alignment.bottomLeft,
+                  ),
+                  border: Border.all(color: Theme.of(context).scaffoldBackgroundColor, width: 4),
+                  boxShadow: [
+                    BoxShadow(
+                      color: colors.first.withOpacity(0.4),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
-                icon: const Icon(Icons.smart_toy_outlined, color: Colors.white),
-                label: const Text(
-                  'هوش مصنوعی',
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                child: const Icon(Icons.home_rounded, color: Colors.white, size: 28),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                'خانه',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: sel ? cs.primary : cs.onSurfaceVariant,
                 ),
-              ),
-              // آیکون‌های مدیریت فقط برای مدیر (نقش teacher) نمایش داده می‌شوند
-              StreamBuilder<bool>(
-                stream: AdminService.isTeacherStream(),
-                initialData: false,
-                builder: (context, snapshot) {
-                  if (snapshot.data != true) return const SizedBox.shrink();
-                  return Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.bar_chart, color: Colors.white),
-                        tooltip: 'آمار و دانش‌آموزان',
-                        onPressed: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => const AdminDashboardScreen()),
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.admin_panel_settings, color: Colors.white),
-                        tooltip: 'پنل مدیریت محتوا',
-                        onPressed: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => const ContentManagerScreen()),
-                        ),
-                      ),
-                    ],
-                  );
-                },
-              ),
-              IconButton(
-                icon: const Icon(Icons.logout, color: Colors.white),
-                tooltip: 'خروج از حساب',
-                onPressed: () => FirebaseAuth.instance.signOut(),
               ),
             ],
           ),
-          SliverPadding(
-            padding: const EdgeInsets.all(16),
-            sliver: SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  final title = scienceGrade9Chapters[index];
-                  return Card(
-                    child: ListTile(
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      leading: CircleAvatar(
-                        backgroundColor: AppTheme.accentOrange.withOpacity(0.15),
-                        child: Text('${index + 1}', style: const TextStyle(color: AppTheme.accentOrange, fontWeight: FontWeight.bold)),
-                      ),
-                      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
-                      subtitle: const Padding(
-                        padding: EdgeInsets.only(top: 6),
-                        child: LinearProgressIndicator(value: 0, minHeight: 6),
-                      ),
-                      trailing: const Icon(Icons.chevron_left),
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => ChapterDetailScreen(chapterIndex: index, chapterTitle: title),
-                        ),
-                      ),
-                    ),
-                  );
-                },
-                childCount: scienceGrade9Chapters.length,
-              ),
-            ),
-          ),
-        ],
-      ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: 0,
-        onDestinationSelected: (index) {
-          if (index == 1) {
-            Navigator.push(context, MaterialPageRoute(builder: (_) => const BookListScreen()));
-          } else if (index == 2) {
-            Navigator.push(context, MaterialPageRoute(builder: (_) => const ExamListScreen()));
-          } else if (index == 3) {
-            Navigator.push(context, MaterialPageRoute(builder: (_) => const VirtualLabScreen()));
-          } else if (index == 4) {
-            Navigator.push(context, MaterialPageRoute(builder: (_) => const TeacherProfileScreen()));
-          }
-        },
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.home), label: 'خانه'),
-          NavigationDestination(icon: Icon(Icons.menu_book), label: 'کتاب'),
-          NavigationDestination(icon: Icon(Icons.quiz), label: 'آزمون'),
-          NavigationDestination(icon: Icon(Icons.science), label: 'آزمایشگاه'),
-          NavigationDestination(icon: Icon(Icons.person), label: 'پروفایل'),
-        ],
+        ),
       ),
     );
   }
