@@ -30,6 +30,9 @@ dependencies:
   image_cropper: ^5.0.1
   cached_network_image: ^3.3.1
 
+  # صدا (افکت‌های صوتی)
+  audioplayers: ^5.2.1
+
   # نمودار، شبکه و لینک
   fl_chart: ^0.66.2
   http: ^1.2.1
@@ -42,6 +45,9 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
+  assets:
+    - assets/images/
 
   fonts:
     - family: Vazirmatn
