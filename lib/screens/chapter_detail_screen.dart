@@ -3,9 +3,16 @@ import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../theme/app_theme.dart';
+import '../services/sound_service.dart';
 import 'quiz_screen.dart';
 
-class ChapterDetailScreen extends StatelessWidget {
+class _TabInfo {
+  final String label;
+  final IconData icon;
+  const _TabInfo(this.label, this.icon);
+}
+
+class ChapterDetailScreen extends StatefulWidget {
   final int chapterIndex;
   final String chapterTitle;
 
@@ -15,53 +22,128 @@ class ChapterDetailScreen extends StatelessWidget {
     required this.chapterTitle,
   });
 
-  String get chapterId => 'chapter_${chapterIndex + 1}';
+  @override
+  State<ChapterDetailScreen> createState() => _ChapterDetailScreenState();
+}
+
+class _ChapterDetailScreenState extends State<ChapterDetailScreen>
+    with SingleTickerProviderStateMixin {
+  static const List<_TabInfo> _tabs = [
+    _TabInfo('خلاصه فصل', Icons.menu_book_rounded),
+    _TabInfo('جواب فعالیت‌ها', Icons.edit_note_rounded),
+    _TabInfo('خودآزمایی‌ها', Icons.help_outline_rounded),
+    _TabInfo('گالری تصاویر', Icons.photo_library_rounded),
+  ];
+
+  late final TabController _tc = TabController(length: _tabs.length, vsync: this);
+
+  String get chapterId => 'chapter_${widget.chapterIndex + 1}';
 
   @override
-  Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 4,
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text(chapterTitle),
-          bottom: const TabBar(
-            isScrollable: true,
-            tabs: [
-              Tab(text: 'خلاصه فصل'),
-              Tab(text: 'جواب فعالیت‌ها'),
-              Tab(text: 'خودآزمایی‌ها'),
-              Tab(text: 'گالری تصاویر'),
+  void dispose() {
+    _tc.dispose();
+    super.dispose();
+  }
+
+  Widget _tabBox(int i, bool selected) {
+    final info = _tabs[i];
+    final fg = selected ? AppTheme.primaryBlue : Colors.white;
+    return Padding(
+      padding: const EdgeInsetsDirectional.only(end: 8),
+      child: GestureDetector(
+        onTap: () {
+          SoundService.play(Sfx.tap);
+          _tc.animateTo(i);
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          decoration: BoxDecoration(
+            color: selected ? Colors.white : Colors.white.withOpacity(0.16),
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: selected ? Colors.white : Colors.white54, width: 1.2),
+            boxShadow: selected
+                ? [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.18),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ]
+                : const [],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(info.icon, size: 18, color: fg),
+              const SizedBox(width: 6),
+              Text(
+                info.label,
+                style: TextStyle(color: fg, fontWeight: FontWeight.bold, fontSize: 13),
+              ),
             ],
           ),
         ),
-        floatingActionButton: FloatingActionButton.extended(
-          backgroundColor: AppTheme.accentOrange,
-          foregroundColor: Colors.white,
-          icon: const Icon(Icons.quiz),
-          label: const Text('آزمون پایان فصل'),
-          onPressed: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => QuizScreen(chapterId: chapterId, chapterTitle: chapterTitle),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(widget.chapterTitle),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(56),
+          child: SizedBox(
+            height: 56,
+            child: AnimatedBuilder(
+              animation: _tc.animation!,
+              builder: (context, _) {
+                final sel = _tc.animation!.value.round();
+                return ListView(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+                  children: [
+                    for (var i = 0; i < _tabs.length; i++) _tabBox(i, sel == i),
+                  ],
+                );
+              },
             ),
           ),
         ),
-        body: TabBarView(
-          children: [
-            _SummaryTab(chapterId: chapterId),
-            _AnswersTab(
-              chapterId: chapterId,
-              collection: 'activities',
-              emptyText: 'هنوز جواب فعالیتی برای این فصل ثبت نشده است.',
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        backgroundColor: AppTheme.accentOrange,
+        foregroundColor: Colors.white,
+        icon: const Icon(Icons.quiz),
+        label: const Text('آزمون پایان فصل'),
+        onPressed: () {
+          SoundService.play(Sfx.tap);
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => QuizScreen(chapterId: chapterId, chapterTitle: widget.chapterTitle),
             ),
-            _AnswersTab(
-              chapterId: chapterId,
-              collection: 'selfTests',
-              emptyText: 'هنوز خودآزمایی‌ای برای این فصل ثبت نشده است.',
-            ),
-            _GalleryTab(chapterId: chapterId),
-          ],
-        ),
+          );
+        },
+      ),
+      body: TabBarView(
+        controller: _tc,
+        children: [
+          _SummaryTab(chapterId: chapterId),
+          _AnswersTab(
+            chapterId: chapterId,
+            collection: 'activities',
+            emptyText: 'هنوز جواب فعالیتی برای این فصل ثبت نشده است.',
+          ),
+          _AnswersTab(
+            chapterId: chapterId,
+            collection: 'selfTests',
+            emptyText: 'هنوز خودآزمایی‌ای برای این فصل ثبت نشده است.',
+          ),
+          _GalleryTab(chapterId: chapterId),
+        ],
       ),
     );
   }
@@ -107,14 +189,22 @@ class _SummaryTabState extends State<_SummaryTab> with AutomaticKeepAliveClientM
         if (text.isEmpty) return _centerMessage('هنوز خلاصه‌ای برای این فصل ثبت نشده است.');
         return SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
-          child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: AppTheme.primaryBlue.withOpacity(0.06),
-              borderRadius: BorderRadius.circular(12),
+          child: Card(
+            clipBehavior: Clip.antiAlias,
+            child: IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Container(width: 6, color: AppTheme.accentOrange),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: SelectableText(text, style: const TextStyle(fontSize: 15, height: 1.9)),
+                    ),
+                  ),
+                ],
+              ),
             ),
-            child: SelectableText(text, style: const TextStyle(fontSize: 15, height: 1.9)),
           ),
         );
       },
@@ -161,7 +251,17 @@ class _AnswersTabState extends State<_AnswersTab> with AutomaticKeepAliveClientM
             final d = docs[i].data();
             return Card(
               margin: const EdgeInsets.only(bottom: 10),
+              clipBehavior: Clip.antiAlias,
               child: ExpansionTile(
+                shape: const Border(),
+                collapsedShape: const Border(),
+                leading: CircleAvatar(
+                  radius: 16,
+                  backgroundColor: AppTheme.accentOrange.withOpacity(0.15),
+                  child: Text('${i + 1}',
+                      style: const TextStyle(
+                          color: AppTheme.accentOrange, fontWeight: FontWeight.bold, fontSize: 13)),
+                ),
                 title: Text((d['title'] ?? '').toString(),
                     style: const TextStyle(fontWeight: FontWeight.w600)),
                 childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
@@ -226,7 +326,7 @@ class _GalleryTabState extends State<_GalleryTab> with AutomaticKeepAliveClientM
           itemBuilder: (context, i) {
             final img = docs[i].data();
             return ClipRRect(
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(16),
               child: Column(
                 children: [
                   Expanded(
