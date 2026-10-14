@@ -14,14 +14,48 @@ service cloud.firestore {
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'teacher';
     }
 
-    // هر کاربر فقط داده خودش را می‌بیند و می‌نویسد؛ دبیر به همه دسترسی خواندن دارد
+    // هر کاربر فقط داده خودش را می‌بیند؛ دبیر (مدیر) به همه دسترسی خواندن دارد.
+    // نقش (role) را کاربر نمی‌تواند عوض کند: ثبت‌نام فقط student می‌سازد و
+    // نقش teacher فقط دستی از Firebase Console روی حساب مدیر گذاشته می‌شود.
     match /users/{userId} {
       allow read: if isSignedIn() && (request.auth.uid == userId || isTeacher());
-      allow write: if isSignedIn() && request.auth.uid == userId;
+      allow create: if isSignedIn() && request.auth.uid == userId
+        && request.resource.data.role == 'student'
+        && request.resource.data.xp == 0
+        && request.resource.data.level == 1;
+      allow update: if isSignedIn() && request.auth.uid == userId
+        && request.resource.data.role == resource.data.role;
+      allow delete: if false;
 
       match /{subcollection=**} {
         allow read: if isSignedIn() && (request.auth.uid == userId || isTeacher());
         allow write: if isSignedIn() && request.auth.uid == userId;
+      }
+    }
+
+    // نگاشت «شماره موبایل ← ایمیل» برای ورود با شماره موبایل.
+    // فقط get مجاز است (list ممنوع)، چون قبل از ورود باید خوانده شود.
+    // ساخت سند فقط توسط خود صاحب حساب و فقط با ایمیل خودش ممکن است.
+    match /loginIndex/{phone} {
+      allow get: if phone.matches('^09[0-9]{9}$');
+      allow list: if false;
+      allow create: if isSignedIn()
+        && phone.matches('^09[0-9]{9}$')
+        && request.resource.data.keys().hasOnly(['uid', 'email'])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.email == request.auth.token.email;
+      allow update: if false;
+      allow delete: if isSignedIn() && resource.data.uid == request.auth.uid;
+    }
+
+    // خلاصه فصل، جواب فعالیت‌ها و خودآزمایی‌ها: خواندن برای کاربران واردشده، نوشتن فقط مدیر
+    match /chapterContent/{chapterId} {
+      allow read: if isSignedIn();
+      allow write: if isTeacher();
+
+      match /{sub}/{docId} {
+        allow read: if isSignedIn();
+        allow write: if isTeacher();
       }
     }
 
@@ -53,3 +87,5 @@ service cloud.firestore {
     }
   }
 }
+
+// Firebase Storage استفاده نمی‌شود (آپلود فایل‌ها با Cloudinary است). آن را فعال نکنید.
