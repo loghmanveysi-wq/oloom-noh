@@ -83,7 +83,6 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
           toolbarTitle: 'برش عکس پروفایل',
           toolbarColor: AppTheme.primaryBlue,
           toolbarWidgetColor: Colors.white,
-          cropStyle: CropStyle.circle,
         ),
       ],
     );
