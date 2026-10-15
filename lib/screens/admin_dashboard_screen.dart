@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../theme/app_theme.dart';
-
+import '../widgets/boxed_tab_bar.dart';
 class AdminDashboardScreen extends StatelessWidget {
   const AdminDashboardScreen({super.key});
 
@@ -14,13 +14,13 @@ class AdminDashboardScreen extends StatelessWidget {
       child: Scaffold(
         appBar: AppBar(
           title: const Text('داشبورد دبیر'),
-          bottom: const TabBar(
-            isScrollable: true,
-            tabs: [
-              Tab(text: 'آمار کلی'),
-              Tab(text: 'دانش‌آموزان'),
-              Tab(text: 'رصد لحظه‌ای'),
-              Tab(text: 'هشدارها'),
+          bottom: const BoxedTabBar(
+            labels: ['آمار کلی', 'دانش‌آموزان', 'رصد لحظه‌ای', 'هشدارها'],
+            icons: [
+              Icons.insights_rounded,
+              Icons.groups_rounded,
+              Icons.sensors_rounded,
+              Icons.warning_amber_rounded,
             ],
           ),
         ),
