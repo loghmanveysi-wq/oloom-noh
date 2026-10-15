@@ -9,6 +9,7 @@ import '../services/cloudinary_service.dart';
 import '../services/admin_service.dart';
 import 'chapter_content_admin.dart';
 import 'question_admin.dart';
+import '../widgets/boxed_tab_bar.dart';
 
 class ContentManagerScreen extends StatelessWidget {
   const ContentManagerScreen({super.key});
@@ -43,15 +44,22 @@ class _ContentManagerBody extends StatelessWidget {
       child: Scaffold(
         appBar: AppBar(
           title: const Text('پنل مدیریت محتوا'),
-          bottom: const TabBar(
-            isScrollable: true,
-            tabs: [
-              Tab(text: 'خلاصه فصل'),
-              Tab(text: 'جواب فعالیت‌ها'),
-              Tab(text: 'خودآزمایی‌ها'),
-              Tab(text: 'سؤال آزمون'),
-              Tab(text: 'تصویر فصل'),
-              Tab(text: 'کتاب PDF'),
+          bottom: const BoxedTabBar(
+            labels: [
+              'خلاصه فصل',
+              'جواب فعالیت‌ها',
+              'خودآزمایی‌ها',
+              'سؤال آزمون',
+              'تصویر فصل',
+              'کتاب PDF',
+            ],
+            icons: [
+              Icons.menu_book_rounded,
+              Icons.edit_note_rounded,
+              Icons.help_outline_rounded,
+              Icons.quiz_rounded,
+              Icons.image_rounded,
+              Icons.picture_as_pdf_rounded,
             ],
           ),
         ),
