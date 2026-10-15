@@ -1,4 +1,4 @@
-// صفحه «خانه» (دکمه‌ی وسط): معرفی نرم‌افزار و معرفی سازنده
+// صفحه «خانه» (دکمه‌ی وسط): معرفی نرم‌افزار و معرفی سازنده؛ همه‌چیز در یک صفحه و بدون اسکرول
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -48,33 +48,38 @@ class _IntroScreenState extends State<IntroScreen> {
     Navigator.push(context, MaterialPageRoute(builder: (_) => page));
   }
 
+  Widget _section(Widget child) =>
+      Padding(padding: const EdgeInsets.fromLTRB(16, 6, 16, 6), child: child);
+
+  // همه‌ی بخش‌ها در یک صفحه جا می‌شوند: اگر صفحه بلند باشد فاصله‌ها بیشتر می‌شود،
+  // و اگر کوتاه باشد (گوشی کوچک) کل صفحه کمی کوچک‌تر نمایش داده می‌شود؛ هرگز اسکرول ندارد.
   @override
   Widget build(BuildContext context) {
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light,
-      child: SingleChildScrollView(
-        child: Column(
-          children: [
-            _hero(context),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-              child: Column(
-                children: [
-                  FadeSlide(child: _aboutCard()),
-                  const SizedBox(height: 16),
-                  FadeSlide(delayMs: 120, child: _aiBanner()),
-                  const SizedBox(height: 16),
-                  FadeSlide(delayMs: 200, child: _creatorCard()),
-                  const SizedBox(height: 18),
-                  const Text(
-                    'نسخه ۱.۰  •  ساخته‌شده با ❤ برای دانش‌آموزان',
-                    style: TextStyle(color: Colors.grey, fontSize: 12),
-                  ),
-                ],
+      child: LayoutBuilder(
+        builder: (context, c) {
+          return FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.topCenter,
+            child: SizedBox(
+              width: c.maxWidth,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: c.maxHeight),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    _hero(context),
+                    _section(FadeSlide(child: _aboutCard())),
+                    _section(FadeSlide(delayMs: 100, child: _aiBanner())),
+                    _section(FadeSlide(delayMs: 180, child: _creatorCard())),
+                    const SizedBox(height: 6),
+                  ],
+                ),
               ),
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -100,39 +105,49 @@ class _IntroScreenState extends State<IntroScreen> {
           begin: Alignment.topRight,
           end: Alignment.bottomLeft,
         ),
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(32)),
+        borderRadius: BorderRadius.vertical(bottom: Radius.circular(28)),
       ),
       child: Stack(
         children: [
-          Positioned(top: -40, left: -30, child: _bubble(140, 0.10)),
-          Positioned(bottom: -50, right: -20, child: _bubble(170, 0.08)),
+          Positioned(top: -40, left: -30, child: _bubble(130, 0.10)),
+          Positioned(bottom: -50, right: -20, child: _bubble(150, 0.08)),
           Padding(
-            padding: EdgeInsets.fromLTRB(8, top + 4, 8, 28),
+            padding: EdgeInsets.fromLTRB(8, top + 4, 8, 16),
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Row(children: [_profileButton(), const Spacer(), ..._topIcons(context)]),
                 const SizedBox(height: 4),
-                Container(
-                  width: 84,
-                  height: 84,
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(color: Color(0x33000000), blurRadius: 16, offset: Offset(0, 6)),
-                    ],
-                  ),
-                  child: const Icon(Icons.science, size: 46, color: AppTheme.primaryBlue),
-                ),
-                const SizedBox(height: 12),
-                const Text(
-                  'علوم نهم',
-                  style: TextStyle(color: Colors.white, fontSize: 30, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 4),
-                const Text(
-                  'همراه شما برای یادگیری علوم تجربی',
-                  style: TextStyle(color: Colors.white70, fontSize: 14),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      width: 54,
+                      height: 54,
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(color: Color(0x33000000), blurRadius: 12, offset: Offset(0, 4)),
+                        ],
+                      ),
+                      child: const Icon(Icons.science, size: 30, color: AppTheme.primaryBlue),
+                    ),
+                    const SizedBox(width: 12),
+                    const Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'علوم نهم',
+                          style: TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold),
+                        ),
+                        Text(
+                          'همراه شما برای یادگیری علوم تجربی',
+                          style: TextStyle(color: Colors.white70, fontSize: 12.5),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -247,91 +262,37 @@ class _IntroScreenState extends State<IntroScreen> {
     return Row(
       children: [
         Container(
-          padding: const EdgeInsets.all(8),
+          padding: const EdgeInsets.all(6),
           decoration: BoxDecoration(
             color: AppTheme.accentOrange.withOpacity(0.12),
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(10),
           ),
-          child: Icon(icon, color: AppTheme.accentOrange, size: 22),
+          child: Icon(icon, color: AppTheme.accentOrange, size: 20),
         ),
-        const SizedBox(width: 10),
-        Text(text, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+        const SizedBox(width: 8),
+        Text(text, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
       ],
     );
   }
 
   Widget _aboutCard() {
     return Card(
+      margin: EdgeInsets.zero,
       child: Padding(
-        padding: const EdgeInsets.all(18),
+        padding: const EdgeInsets.all(14),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _sectionTitle(Icons.info_outline, 'معرفی نرم‌افزار'),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
             const Text(
-              'علوم نهم همراه آموزشی شما برای درس علوم تجربی پایه‌ی نهم است. '
-              'در این نرم‌افزار می‌توانید خلاصه‌ی هر فصل، جواب فعالیت‌ها و خودآزمایی‌ها را مطالعه کنید، '
-              'با آزمون‌های تصادفی خود را بسنجید، کتاب را بخوانید، در آزمایشگاه مجازی تمرین کنید '
-              'و از دستیار هوش مصنوعی سؤال بپرسید.',
-              style: TextStyle(height: 1.9, fontSize: 14.5),
-            ),
-            const SizedBox(height: 14),
-            GridView.count(
-              crossAxisCount: 2,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisSpacing: 10,
-              mainAxisSpacing: 10,
-              childAspectRatio: 1.9,
-              children: [
-                _tile(Icons.school_rounded, 'آموزش', 'خلاصه و فعالیت‌ها', const Color(0xFF1565C0), 0),
-                _tile(Icons.menu_book_rounded, 'کتاب', 'مطالعه‌ی کتاب', const Color(0xFF00897B), 1),
-                _tile(Icons.quiz_rounded, 'آزمون', 'خودت را بسنج', const Color(0xFF6A1B9A), 3),
-                _tile(Icons.science_rounded, 'آزمایشگاه', 'شبیه‌ساز مجازی', const Color(0xFFC62828), 4),
-              ],
+              'علوم نهم همراه آموزشی شما برای درس علوم تجربی پایه‌ی نهم است: '
+              'خلاصه‌ی فصل‌ها، جواب فعالیت‌ها و خودآزمایی‌ها، آزمون تصادفی، کتاب، '
+              'آزمایشگاه مجازی و دستیار هوش مصنوعی. از دکمه‌های پایین صفحه به هر بخش بروید.',
+              style: TextStyle(height: 1.7, fontSize: 13.5),
             ),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _tile(IconData icon, String title, String subtitle, Color c, int tab) {
-    return Material(
-      color: c.withOpacity(0.10),
-      borderRadius: BorderRadius.circular(16),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: () => widget.onNavigate(tab),
-        child: Padding(
-          padding: const EdgeInsets.all(10),
-          child: Row(
-            children: [
-              Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(color: c, shape: BoxShape.circle),
-                child: Icon(icon, color: Colors.white, size: 22),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                    Text(
-                      subtitle,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 11, color: Colors.grey),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
         ),
       ),
     );
@@ -345,8 +306,8 @@ class _IntroScreenState extends State<IntroScreen> {
         boxShadow: [
           BoxShadow(
             color: AppTheme.accentOrange.withOpacity(0.35),
-            blurRadius: 14,
-            offset: const Offset(0, 6),
+            blurRadius: 12,
+            offset: const Offset(0, 5),
           ),
         ],
       ),
@@ -356,24 +317,23 @@ class _IntroScreenState extends State<IntroScreen> {
           borderRadius: BorderRadius.circular(20),
           onTap: () => _push(const AiChatScreen()),
           child: const Padding(
-            padding: EdgeInsets.all(16),
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Row(
               children: [
-                Icon(Icons.smart_toy_rounded, color: Colors.white, size: 38),
-                SizedBox(width: 14),
+                Icon(Icons.smart_toy_rounded, color: Colors.white, size: 34),
+                SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text('دستیار هوش مصنوعی',
-                          style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
-                      SizedBox(height: 2),
+                          style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
                       Text('هر سؤالی از درس علوم داری بپرس',
-                          style: TextStyle(color: Colors.white70, fontSize: 12.5)),
+                          style: TextStyle(color: Colors.white70, fontSize: 12)),
                     ],
                   ),
                 ),
-                Icon(Icons.chevron_left_rounded, color: Colors.white, size: 28),
+                Icon(Icons.chevron_left_rounded, color: Colors.white, size: 26),
               ],
             ),
           ),
@@ -385,13 +345,13 @@ class _IntroScreenState extends State<IntroScreen> {
   // --------------------------- معرفی سازنده ---------------------------
   Widget _infoRow(IconData icon, String text) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
+      padding: const EdgeInsets.only(bottom: 4),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 18, color: AppTheme.primaryBlue),
-          const SizedBox(width: 8),
-          Expanded(child: Text(text, style: const TextStyle(fontSize: 13, height: 1.5))),
+          Icon(icon, size: 16, color: AppTheme.primaryBlue),
+          const SizedBox(width: 6),
+          Expanded(child: Text(text, style: const TextStyle(fontSize: 12.5, height: 1.4))),
         ],
       ),
     );
@@ -399,73 +359,62 @@ class _IntroScreenState extends State<IntroScreen> {
 
   Widget _creatorCard() {
     return Card(
+      margin: EdgeInsets.zero,
       child: Padding(
-        padding: const EdgeInsets.all(18),
+        padding: const EdgeInsets.all(14),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _sectionTitle(Icons.person_pin_rounded, 'سازنده‌ی نرم‌افزار'),
-            const SizedBox(height: 14),
+            const SizedBox(height: 10),
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  width: 112,
-                  height: 142,
+                  width: 84,
+                  height: 106,
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(22),
+                    borderRadius: BorderRadius.circular(18),
                     border: Border.all(color: AppTheme.accentOrange, width: 3),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withOpacity(0.18),
-                        blurRadius: 12,
-                        offset: const Offset(0, 5),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
                       ),
                     ],
                   ),
                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(19),
+                    borderRadius: BorderRadius.circular(15),
                     child: Image.asset(
                       _teacherPhoto,
                       fit: BoxFit.cover,
                       alignment: Alignment.topCenter,
                       errorBuilder: (_, __, ___) => Container(
                         color: Colors.grey.shade300,
-                        child: const Icon(Icons.person, size: 56, color: AppTheme.primaryBlue),
+                        child: const Icon(Icons.person, size: 44, color: AppTheme.primaryBlue),
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: 14),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text('لقمان ویسی',
-                          style: TextStyle(fontSize: 21, fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 4),
+                          style: TextStyle(fontSize: 19, fontWeight: FontWeight.bold)),
                       const Text('دبیر علوم تجربی',
-                          style: TextStyle(color: AppTheme.accentOrange, fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 12),
+                          style: TextStyle(
+                              color: AppTheme.accentOrange, fontWeight: FontWeight.bold, fontSize: 13)),
+                      const SizedBox(height: 8),
                       _infoRow(Icons.school_outlined, 'دبیرستان ام‌المومنین روانسر'),
                       _infoRow(Icons.location_on_outlined, 'روانسر، استان کرمانشاه'),
+                      _infoRow(Icons.workspace_premium_outlined, 'مدرس تیمز کشوری'),
+                      _infoRow(Icons.groups_rounded, 'سرگروه آموزشی علوم تجربی روانسر'),
                     ],
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            const Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                Chip(
-                  avatar: Icon(Icons.workspace_premium, size: 18, color: AppTheme.accentOrange),
-                  label: Text('مدرس تیمز کشوری', style: TextStyle(fontSize: 12.5)),
-                ),
-                Chip(
-                  avatar: Icon(Icons.groups_rounded, size: 18, color: AppTheme.primaryBlue),
-                  label: Text('سرگروه آموزشی علوم تجربی روانسر', style: TextStyle(fontSize: 12.5)),
                 ),
               ],
             ),
