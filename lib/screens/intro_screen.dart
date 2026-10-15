@@ -1,6 +1,7 @@
 // صفحه «خانه» (دکمه‌ی وسط): معرفی نرم‌افزار و معرفی سازنده
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
@@ -141,7 +142,7 @@ class _IntroScreenState extends State<IntroScreen> {
     );
   }
 
-  // دکمه‌ی پروفایل دانش‌آموز (بالا سمت راست): حرف اول نام کاربر
+  // دکمه‌ی پروفایل دانش‌آموز (بالا سمت راست): عکس شخصی یا حرف اول نام
   Widget _profileButton() {
     return Tooltip(
       message: 'پروفایل من',
@@ -162,7 +163,22 @@ class _IntroScreenState extends State<IntroScreen> {
           child: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
             stream: _me,
             builder: (context, snap) {
-              final name = (snap.data?.data()?['name'] ?? '').toString().trim();
+              final data = snap.data?.data();
+              final name = (data?['name'] ?? '').toString().trim();
+              final photo = (data?['photoUrl'] ?? '').toString().trim();
+              if (photo.isNotEmpty) {
+                return ClipOval(
+                  child: SizedBox.expand(
+                    child: CachedNetworkImage(
+                      imageUrl: photo,
+                      fit: BoxFit.cover,
+                      memCacheWidth: 150,
+                      errorWidget: (_, __, ___) =>
+                          const Icon(Icons.person, color: AppTheme.primaryBlue),
+                    ),
+                  ),
+                );
+              }
               return Center(
                 child: name.isEmpty
                     ? const Icon(Icons.person, color: AppTheme.primaryBlue)
