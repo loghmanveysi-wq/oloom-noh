@@ -1,4 +1,4 @@
-// پنل مدیریت محتوا (فقط برای مدیر): خلاصه فصل، جواب فعالیت‌ها، خودآزمایی‌ها، سؤال آزمون، تصویر و PDF
+// پنل مدیریت محتوا (فقط برای مدیر): خلاصه فصل، جواب فعالیت‌ها، آزمایش‌ها، خودآزمایی‌ها، سؤال آزمون، تصویر و PDF
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -40,7 +40,7 @@ class _ContentManagerBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 6,
+      length: 7,
       child: Scaffold(
         appBar: AppBar(
           title: const Text('پنل مدیریت محتوا'),
@@ -48,6 +48,7 @@ class _ContentManagerBody extends StatelessWidget {
             labels: [
               'خلاصه فصل',
               'جواب فعالیت‌ها',
+              'آزمایش‌ها',
               'خودآزمایی‌ها',
               'سؤال آزمون',
               'تصویر فصل',
@@ -56,6 +57,7 @@ class _ContentManagerBody extends StatelessWidget {
             icons: [
               Icons.menu_book_rounded,
               Icons.edit_note_rounded,
+              Icons.science_rounded,
               Icons.help_outline_rounded,
               Icons.quiz_rounded,
               Icons.image_rounded,
@@ -67,6 +69,7 @@ class _ContentManagerBody extends StatelessWidget {
           children: [
             SummaryAdminTab(),
             ItemsAdminTab(collection: 'activities', singular: 'فعالیت', titleHint: 'مثلاً: فعالیت صفحه ۱۲'),
+            ItemsAdminTab(collection: 'experiments', singular: 'آزمایش', titleHint: 'مثلاً: آزمایش صفحه ۱۴'),
             ItemsAdminTab(collection: 'selfTests', singular: 'خودآزمایی', titleHint: 'مثلاً: خودآزمایی ۱'),
             QuestionsAdminTab(),
             _AddImageTab(),
