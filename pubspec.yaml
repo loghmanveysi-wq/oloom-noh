@@ -33,6 +33,10 @@ dependencies:
   # صدا (افکت‌های صوتی)
   audioplayers: ^5.2.1
 
+  # ویدیو و انتخاب فایل (پیوست‌های محتوا)
+  video_player: ^2.8.2
+  file_picker: ^6.1.1
+
   # نمودار، شبکه و لینک
   fl_chart: ^0.66.2
   http: ^1.2.1
