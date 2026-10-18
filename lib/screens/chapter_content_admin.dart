@@ -1,7 +1,9 @@
-// تب‌های پنل مدیریت برای محتوای فصل‌ها: خلاصه فصل، جواب فعالیت‌ها، خودآزمایی‌ها
+// تب‌های پنل مدیریت برای محتوای فصل‌ها: خلاصه فصل، جواب فعالیت‌ها، آزمایش‌ها، خودآزمایی‌ها
+// هر مورد می‌تواند پیوست (تصویر، ویدیو، فایل) هم داشته باشد.
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/chapter_model.dart';
+import '../widgets/attachments.dart';
 
 Widget _chapterDropdown({required int? value, required ValueChanged<int?> onChanged}) {
   return DropdownButtonFormField<int>(
@@ -30,8 +32,11 @@ class SummaryAdminTab extends StatefulWidget {
 class _SummaryAdminTabState extends State<SummaryAdminTab> {
   int? _chapterIndex;
   final _controller = TextEditingController();
+  List<Map<String, dynamic>> _attachments = [];
+  int _loadCount = 0;
   bool _loading = false;
   bool _saving = false;
+  bool _uploading = false;
 
   String _id(int i) => 'chapter_${i + 1}';
 
@@ -53,6 +58,8 @@ class _SummaryAdminTabState extends State<SummaryAdminTab> {
       final data = doc.data();
       if (!mounted) return;
       _controller.text = (data?['summary'] ?? data?['content'] ?? '').toString();
+      _attachments = parseAttachments(data?['attachments']);
+      _loadCount++;
     } catch (e) {
       _snack('خطا: $e');
     } finally {
@@ -69,6 +76,7 @@ class _SummaryAdminTabState extends State<SummaryAdminTab> {
     try {
       await FirebaseFirestore.instance.collection('chapterContent').doc(_id(_chapterIndex!)).set({
         'summary': _controller.text.trim(),
+        'attachments': _attachments,
         'updatedAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
       _snack('خلاصه فصل ذخیره شد ✅');
@@ -100,7 +108,7 @@ class _SummaryAdminTabState extends State<SummaryAdminTab> {
               ? const Center(child: Padding(padding: EdgeInsets.all(12), child: CircularProgressIndicator()))
               : TextField(
                   controller: _controller,
-                  minLines: 10,
+                  minLines: 8,
                   maxLines: 20,
                   decoration: const InputDecoration(
                     hintText: 'خلاصه‌ی درس این فصل را اینجا بنویسید...',
@@ -108,16 +116,29 @@ class _SummaryAdminTabState extends State<SummaryAdminTab> {
                     alignLabelWithHint: true,
                   ),
                 ),
+          if (_chapterIndex != null && !_loading) ...[
+            const SizedBox(height: 16),
+            AttachmentsEditor(
+              key: ValueKey('summary-$_chapterIndex-$_loadCount'),
+              initial: _attachments,
+              folder: 'content/${_id(_chapterIndex!)}/summary',
+              onChanged: (v) => _attachments = v,
+              onBusyChanged: (b) {
+                if (mounted) setState(() => _uploading = b);
+              },
+            ),
+          ],
           const SizedBox(height: 12),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: _saving ? null : _save,
+              onPressed: (_saving || _uploading) ? null : _save,
               child: _saving
                   ? const SizedBox(
-                      height: 20, width: 20,
+                      height: 20,
+                      width: 20,
                       child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                  : const Text('ذخیره خلاصه فصل'),
+                  : Text(_uploading ? 'منتظر پایان آپلود...' : 'ذخیره خلاصه فصل'),
             ),
           ),
         ],
@@ -126,10 +147,10 @@ class _SummaryAdminTabState extends State<SummaryAdminTab> {
   }
 }
 
-// ------------- جواب فعالیت‌ها / خودآزمایی‌ها (افزودن، ویرایش، حذف، جابه‌جایی) -------------
+// ---- جواب فعالیت‌ها / آزمایش‌ها / خودآزمایی‌ها (افزودن، ویرایش، حذف، جابه‌جایی، پیوست) ----
 class ItemsAdminTab extends StatefulWidget {
-  final String collection; // activities | selfTests
-  final String singular; // مثلاً «فعالیت» یا «خودآزمایی»
+  final String collection; // activities | experiments | selfTests
+  final String singular; // مثلاً «فعالیت»، «آزمایش» یا «خودآزمایی»
   final String titleHint;
 
   const ItemsAdminTab({
@@ -168,64 +189,90 @@ class _ItemsAdminTabState extends State<ItemsAdminTab> {
     QueryDocumentSnapshot<Map<String, dynamic>>? doc,
     required int nextOrder,
   }) async {
+    final chapterIndex = _chapterIndex;
+    if (chapterIndex == null) return;
     final titleC = TextEditingController(text: (doc?.data()['title'] as String?) ?? '');
     final answerC = TextEditingController(text: (doc?.data()['answer'] as String?) ?? '');
-    bool showError = false;
+    var atts = parseAttachments(doc?.data()['attachments']);
+    var uploading = false;
+    var showError = false;
 
     final ok = await showDialog<bool>(
       context: context,
+      barrierDismissible: false,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setD) => AlertDialog(
           title: Text(doc == null ? 'افزودن ${widget.singular}' : 'ویرایش ${widget.singular}'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: titleC,
-                  decoration: InputDecoration(
-                    labelText: 'عنوان',
-                    hintText: widget.titleHint,
-                    border: const OutlineInputBorder(),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextField(
+                    controller: titleC,
+                    decoration: InputDecoration(
+                      labelText: 'عنوان',
+                      hintText: widget.titleHint,
+                      border: const OutlineInputBorder(),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: answerC,
-                  minLines: 5,
-                  maxLines: 12,
-                  decoration: InputDecoration(
-                    labelText: 'پاسخ',
-                    alignLabelWithHint: true,
-                    border: const OutlineInputBorder(),
-                    errorText: showError ? 'عنوان و پاسخ را کامل کنید' : null,
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: answerC,
+                    minLines: 4,
+                    maxLines: 12,
+                    decoration: InputDecoration(
+                      labelText: 'پاسخ / توضیح (اگر فقط پیوست دارید، می‌تواند خالی باشد)',
+                      alignLabelWithHint: true,
+                      border: const OutlineInputBorder(),
+                      errorText: showError ? 'عنوان و (پاسخ یا پیوست) را کامل کنید' : null,
+                    ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 14),
+                  AttachmentsEditor(
+                    initial: atts,
+                    folder: 'content/chapter_${chapterIndex + 1}/${widget.collection}',
+                    onChanged: (v) => atts = v,
+                    onBusyChanged: (b) => setD(() => uploading = b),
+                  ),
+                ],
+              ),
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('انصراف')),
+            TextButton(
+              onPressed: uploading ? null : () => Navigator.pop(ctx, false),
+              child: const Text('انصراف'),
+            ),
             ElevatedButton(
-              onPressed: () {
-                if (titleC.text.trim().isEmpty || answerC.text.trim().isEmpty) {
-                  setD(() => showError = true);
-                  return;
-                }
-                Navigator.pop(ctx, true);
-              },
-              child: const Text('ذخیره'),
+              onPressed: uploading
+                  ? null
+                  : () {
+                      if (titleC.text.trim().isEmpty ||
+                          (answerC.text.trim().isEmpty && atts.isEmpty)) {
+                        setD(() => showError = true);
+                        return;
+                      }
+                      Navigator.pop(ctx, true);
+                    },
+              child: Text(uploading ? 'منتظر آپلود...' : 'ذخیره'),
             ),
           ],
         ),
       ),
     );
 
-    if (ok != true || !mounted || _chapterIndex == null) return;
+    if (ok != true || !mounted) return;
     try {
-      final payload = {'title': titleC.text.trim(), 'answer': answerC.text.trim()};
+      final payload = {
+        'title': titleC.text.trim(),
+        'answer': answerC.text.trim(),
+        'attachments': atts,
+      };
       if (doc == null) {
-        await _col(_chapterIndex!).add({
+        await _col(chapterIndex).add({
           ...payload,
           'order': nextOrder,
           'createdAt': FieldValue.serverTimestamp(),
@@ -323,12 +370,18 @@ class _ItemsAdminTabState extends State<ItemsAdminTab> {
                                 itemBuilder: (context, i) {
                                   final d = docs[i];
                                   final data = d.data();
+                                  final attCount = parseAttachments(data['attachments']).length;
+                                  final answer = (data['answer'] ?? '').toString();
+                                  final subtitle = [
+                                    if (answer.isNotEmpty) answer,
+                                    if (attCount > 0) '📎 $attCount پیوست',
+                                  ].join('\n');
                                   return Card(
                                     child: ListTile(
                                       title: Text((data['title'] ?? '').toString()),
                                       subtitle: Text(
-                                        (data['answer'] ?? '').toString(),
-                                        maxLines: 2,
+                                        subtitle,
+                                        maxLines: 3,
                                         overflow: TextOverflow.ellipsis,
                                       ),
                                       onTap: () => _openEditor(doc: d, nextOrder: nextOrder),
