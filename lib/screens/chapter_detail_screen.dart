@@ -1,9 +1,10 @@
-// صفحه جزئیات هر فصل: خلاصه فصل، جواب فعالیت‌ها، خودآزمایی‌ها، گالری تصاویر + آزمون
+// صفحه جزئیات هر فصل: خلاصه فصل، جواب فعالیت‌ها، آزمایش‌ها، خودآزمایی‌ها، گالری تصاویر + آزمون
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../theme/app_theme.dart';
 import '../services/sound_service.dart';
+import '../widgets/attachments.dart';
 import 'quiz_screen.dart';
 
 class _TabInfo {
@@ -31,6 +32,7 @@ class _ChapterDetailScreenState extends State<ChapterDetailScreen>
   static const List<_TabInfo> _tabs = [
     _TabInfo('خلاصه فصل', Icons.menu_book_rounded),
     _TabInfo('جواب فعالیت‌ها', Icons.edit_note_rounded),
+    _TabInfo('آزمایش‌ها', Icons.science_rounded),
     _TabInfo('خودآزمایی‌ها', Icons.help_outline_rounded),
     _TabInfo('گالری تصاویر', Icons.photo_library_rounded),
   ];
@@ -139,6 +141,11 @@ class _ChapterDetailScreenState extends State<ChapterDetailScreen>
           ),
           _AnswersTab(
             chapterId: chapterId,
+            collection: 'experiments',
+            emptyText: 'هنوز آزمایشی برای این فصل ثبت نشده است.',
+          ),
+          _AnswersTab(
+            chapterId: chapterId,
             collection: 'selfTests',
             emptyText: 'هنوز خودآزمایی‌ای برای این فصل ثبت نشده است.',
           ),
@@ -186,25 +193,35 @@ class _SummaryTabState extends State<_SummaryTab> with AutomaticKeepAliveClientM
         }
         final data = snapshot.data?.data();
         final text = (data?['summary'] ?? data?['content'] ?? '').toString().trim();
-        if (text.isEmpty) return _centerMessage('هنوز خلاصه‌ای برای این فصل ثبت نشده است.');
+        final atts = parseAttachments(data?['attachments']);
+        if (text.isEmpty && atts.isEmpty) {
+          return _centerMessage('هنوز خلاصه‌ای برای این فصل ثبت نشده است.');
+        }
         return SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
-          child: Card(
-            clipBehavior: Clip.antiAlias,
-            child: IntrinsicHeight(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Container(width: 6, color: AppTheme.accentOrange),
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: SelectableText(text, style: const TextStyle(fontSize: 15, height: 1.9)),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (text.isNotEmpty)
+                Card(
+                  clipBehavior: Clip.antiAlias,
+                  child: IntrinsicHeight(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Container(width: 6, color: AppTheme.accentOrange),
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: SelectableText(text, style: const TextStyle(fontSize: 15, height: 1.9)),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ],
-              ),
-            ),
+                ),
+              AttachmentsView(items: atts),
+            ],
           ),
         );
       },
@@ -212,10 +229,10 @@ class _SummaryTabState extends State<_SummaryTab> with AutomaticKeepAliveClientM
   }
 }
 
-// ------------------- جواب فعالیت‌ها / خودآزمایی‌ها -------------------
+// ------------------- جواب فعالیت‌ها / آزمایش‌ها / خودآزمایی‌ها -------------------
 class _AnswersTab extends StatefulWidget {
   final String chapterId;
-  final String collection; // activities | selfTests
+  final String collection; // activities | experiments | selfTests
   final String emptyText;
   const _AnswersTab({required this.chapterId, required this.collection, required this.emptyText});
 
@@ -267,13 +284,15 @@ class _AnswersTabState extends State<_AnswersTab> with AutomaticKeepAliveClientM
                 childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                 expandedCrossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Align(
-                    alignment: AlignmentDirectional.centerStart,
-                    child: SelectableText(
-                      (d['answer'] ?? '').toString(),
-                      style: const TextStyle(fontSize: 15, height: 1.9),
+                  if ((d['answer'] ?? '').toString().trim().isNotEmpty)
+                    Align(
+                      alignment: AlignmentDirectional.centerStart,
+                      child: SelectableText(
+                        (d['answer'] ?? '').toString(),
+                        style: const TextStyle(fontSize: 15, height: 1.9),
+                      ),
                     ),
-                  ),
+                  AttachmentsView(items: parseAttachments(d['attachments'])),
                 ],
               ),
             );
