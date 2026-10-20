@@ -1,4 +1,4 @@
-// تب «آزمون»: فهرست فصل‌ها با بهترین نمره‌ی دانش‌آموز
+// فهرست فصل‌ها با بهترین نمره‌ی دانش‌آموز (داخل تب «رقابت» هم نمایش داده می‌شود)
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -6,14 +6,27 @@ import '../theme/app_theme.dart';
 import '../models/chapter_model.dart';
 import 'quiz_screen.dart';
 
-class ExamListScreen extends StatefulWidget {
+class ExamListScreen extends StatelessWidget {
   const ExamListScreen({super.key});
 
   @override
-  State<ExamListScreen> createState() => _ExamListScreenState();
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('آزمون‌ها')),
+      body: const ExamListBody(),
+    );
+  }
 }
 
-class _ExamListScreenState extends State<ExamListScreen> {
+/// محتوای فهرست آزمون‌ها (بدون Scaffold) تا در تب‌ها هم استفاده شود
+class ExamListBody extends StatefulWidget {
+  const ExamListBody({super.key});
+
+  @override
+  State<ExamListBody> createState() => _ExamListBodyState();
+}
+
+class _ExamListBodyState extends State<ExamListBody> {
   Stream<QuerySnapshot<Map<String, dynamic>>>? _stream;
 
   @override
@@ -37,30 +50,27 @@ class _ExamListScreenState extends State<ExamListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('آزمون‌ها')),
-      body: _stream == null
-          ? _list(const {}, const {})
-          : StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-              stream: _stream,
-              builder: (context, snap) {
-                final best = <String, double>{};
-                final attempts = <String, int>{};
-                final docs = snap.data?.docs ?? const <QueryDocumentSnapshot<Map<String, dynamic>>>[];
-                for (final d in docs) {
-                  final m = d.data();
-                  final id = (m['chapterId'] ?? '').toString();
-                  final total = (m['total'] as num?)?.toInt() ?? 0;
-                  final score = (m['score'] as num?)?.toInt() ?? 0;
-                  if (id.isEmpty || total <= 0) continue;
-                  final pct = score * 100 / total;
-                  attempts[id] = (attempts[id] ?? 0) + 1;
-                  if (pct > (best[id] ?? -1)) best[id] = pct;
-                }
-                return _list(best, attempts);
-              },
-            ),
-    );
+    return _stream == null
+        ? _list(const {}, const {})
+        : StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+            stream: _stream,
+            builder: (context, snap) {
+              final best = <String, double>{};
+              final attempts = <String, int>{};
+              final docs = snap.data?.docs ?? const <QueryDocumentSnapshot<Map<String, dynamic>>>[];
+              for (final d in docs) {
+                final m = d.data();
+                final id = (m['chapterId'] ?? '').toString();
+                final total = (m['total'] as num?)?.toInt() ?? 0;
+                final score = (m['score'] as num?)?.toInt() ?? 0;
+                if (id.isEmpty || total <= 0) continue;
+                final pct = score * 100 / total;
+                attempts[id] = (attempts[id] ?? 0) + 1;
+                if (pct > (best[id] ?? -1)) best[id] = pct;
+              }
+              return _list(best, attempts);
+            },
+          );
   }
 
   Widget _list(Map<String, double> best, Map<String, int> attempts) {
