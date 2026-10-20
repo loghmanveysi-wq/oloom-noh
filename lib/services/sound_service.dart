@@ -6,7 +6,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/services.dart';
 import 'package:hive/hive.dart';
 
-enum Sfx { tap, nav, correct, wrong, success }
+enum Sfx { tap, nav, correct, wrong, success, found, lose }
 
 class _Note {
   final double freq;
@@ -48,6 +48,10 @@ class SoundService {
         return _wav(const [_Note(784, 110), _Note(1175, 230)], 0.45);
       case Sfx.wrong:
         return _wav(const [_Note(311, 140), _Note(233, 270)], 0.45);
+      case Sfx.found:
+        return _wav(const [_Note(523, 90), _Note(784, 90), _Note(1047, 260)], 0.45);
+      case Sfx.lose:
+        return _wav(const [_Note(392, 150), _Note(330, 150), _Note(262, 320)], 0.45);
       case Sfx.success:
         return _wav(
           const [_Note(523, 110), _Note(659, 110), _Note(784, 110), _Note(1047, 400)],
