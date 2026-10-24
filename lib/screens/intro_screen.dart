@@ -157,54 +157,63 @@ class _IntroScreenState extends State<IntroScreen> {
     );
   }
 
-  // دکمه‌ی پروفایل دانش‌آموز (بالا سمت راست): عکس شخصی یا حرف اول نام
+  // دکمه‌ی پروفایل دانش‌آموز (بالا سمت راست): عکس شخصی یا حرف اول نام، با نوشته‌ی «پروفایل» زیرش
   Widget _profileButton() {
-    return Tooltip(
-      message: 'پروفایل من',
-      child: GestureDetector(
-        onTap: () => _push(const StudentProfileScreen()),
-        child: Container(
-          width: 42,
-          height: 42,
-          margin: const EdgeInsets.symmetric(horizontal: 8),
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: Colors.white,
-            border: Border.all(color: Colors.white54, width: 2),
-            boxShadow: const [
-              BoxShadow(color: Color(0x33000000), blurRadius: 8, offset: Offset(0, 3)),
-            ],
-          ),
-          child: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-            stream: _me,
-            builder: (context, snap) {
-              final data = snap.data?.data();
-              final name = (data?['name'] ?? '').toString().trim();
-              final photo = (data?['photoUrl'] ?? '').toString().trim();
-              if (photo.isNotEmpty) {
-                return ClipOval(
-                  child: SizedBox.expand(
-                    child: CachedNetworkImage(
-                      imageUrl: photo,
-                      fit: BoxFit.cover,
-                      memCacheWidth: 150,
-                      errorWidget: (_, __, ___) =>
-                          const Icon(Icons.person, color: AppTheme.primaryBlue),
-                    ),
-                  ),
-                );
-              }
-              return Center(
-                child: name.isEmpty
-                    ? const Icon(Icons.person, color: AppTheme.primaryBlue)
-                    : Text(
-                        String.fromCharCode(name.runes.first),
-                        style: const TextStyle(
-                            color: AppTheme.primaryBlue, fontWeight: FontWeight.bold, fontSize: 19),
+    return GestureDetector(
+      onTap: () => _push(const StudentProfileScreen()),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white,
+                border: Border.all(color: Colors.white54, width: 2),
+                boxShadow: const [
+                  BoxShadow(color: Color(0x33000000), blurRadius: 8, offset: Offset(0, 3)),
+                ],
+              ),
+              child: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+                stream: _me,
+                builder: (context, snap) {
+                  final data = snap.data?.data();
+                  final name = (data?['name'] ?? '').toString().trim();
+                  final photo = (data?['photoUrl'] ?? '').toString().trim();
+                  if (photo.isNotEmpty) {
+                    return ClipOval(
+                      child: SizedBox.expand(
+                        child: CachedNetworkImage(
+                          imageUrl: photo,
+                          fit: BoxFit.cover,
+                          memCacheWidth: 150,
+                          errorWidget: (_, __, ___) =>
+                              const Icon(Icons.person, color: AppTheme.primaryBlue),
+                        ),
                       ),
-              );
-            },
-          ),
+                    );
+                  }
+                  return Center(
+                    child: name.isEmpty
+                        ? const Icon(Icons.person, color: AppTheme.primaryBlue)
+                        : Text(
+                            String.fromCharCode(name.runes.first),
+                            style: const TextStyle(
+                                color: AppTheme.primaryBlue, fontWeight: FontWeight.bold, fontSize: 19),
+                          ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 2),
+            const Text(
+              'پروفایل',
+              style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600),
+            ),
+          ],
         ),
       ),
     );
@@ -241,7 +250,7 @@ class _IntroScreenState extends State<IntroScreen> {
                 onPressed: () => _push(const AdminDashboardScreen()),
               ),
               IconButton(
-                tooltip: 'پنل مدیریت محتوا',
+                tooltip: 'پنل مدیریت',
                 icon: const Icon(Icons.admin_panel_settings, color: Colors.white),
                 onPressed: () => _push(const ContentManagerScreen()),
               ),
@@ -288,7 +297,7 @@ class _IntroScreenState extends State<IntroScreen> {
             const SizedBox(height: 8),
             const Text(
               'علوم نهم همراه آموزشی شما برای درس علوم تجربی پایه‌ی نهم است: '
-              'خلاصه‌ی فصل‌ها، جواب فعالیت‌ها و خودآزمایی‌ها، آزمون تصادفی، کتاب، '
+              'خلاصه‌ی فصل‌ها، جواب فعالیت‌ها، آزمون، رقابت زنده با هم‌کلاسی‌ها، کتاب، '
               'آزمایشگاه مجازی و دستیار هوش مصنوعی. از دکمه‌های پایین صفحه به هر بخش بروید.',
               style: TextStyle(height: 1.7, fontSize: 13.5),
             ),
