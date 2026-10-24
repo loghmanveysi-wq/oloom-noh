@@ -1,15 +1,12 @@
-// پنل مدیریت محتوا (فقط برای مدیر): خلاصه فصل، جواب فعالیت‌ها، آزمایش‌ها، خودآزمایی‌ها، سؤال آزمون، تصویر و PDF
-import 'dart:io';
+// پنل مدیریت (فقط برای مدیر): خلاصه فصل، فعالیت‌ها، سؤال آزمون، کتاب PDF و جدول دانش‌آموزان
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../theme/app_theme.dart';
-import '../models/chapter_model.dart';
-import '../services/cloudinary_service.dart';
 import '../services/admin_service.dart';
+import '../widgets/boxed_tab_bar.dart';
 import 'chapter_content_admin.dart';
 import 'question_admin.dart';
-import '../widgets/boxed_tab_bar.dart';
+import 'students_table_tab.dart';
 
 class ContentManagerScreen extends StatelessWidget {
   const ContentManagerScreen({super.key});
@@ -24,7 +21,7 @@ class ContentManagerScreen extends StatelessWidget {
         }
         if (snapshot.data != true) {
           return Scaffold(
-            appBar: AppBar(title: const Text('پنل مدیریت محتوا')),
+            appBar: AppBar(title: const Text('پنل مدیریت')),
             body: const Center(child: Text('این بخش فقط برای مدیر است.')),
           );
         }
@@ -40,40 +37,38 @@ class _ContentManagerBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 7,
+      length: 5,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('پنل مدیریت محتوا'),
+          title: const Text('پنل مدیریت'),
           bottom: const BoxedTabBar(
             labels: [
               'خلاصه فصل',
-              'جواب فعالیت‌ها',
-              'آزمایش‌ها',
-              'خودآزمایی‌ها',
+              'فعالیت‌ها',
               'سؤال آزمون',
-              'تصویر فصل',
               'کتاب PDF',
+              'دانش‌آموزان',
             ],
             icons: [
               Icons.menu_book_rounded,
               Icons.edit_note_rounded,
-              Icons.science_rounded,
-              Icons.help_outline_rounded,
               Icons.quiz_rounded,
-              Icons.image_rounded,
               Icons.picture_as_pdf_rounded,
+              Icons.groups_rounded,
             ],
           ),
         ),
         body: const TabBarView(
           children: [
             SummaryAdminTab(),
-            ItemsAdminTab(collection: 'activities', singular: 'فعالیت', titleHint: 'مثلاً: فعالیت صفحه ۱۲'),
-            ItemsAdminTab(collection: 'experiments', singular: 'آزمایش', titleHint: 'مثلاً: آزمایش صفحه ۱۴'),
-            ItemsAdminTab(collection: 'selfTests', singular: 'خودآزمایی', titleHint: 'مثلاً: خودآزمایی ۱'),
+            ItemsAdminTab(
+              collection: 'activities',
+              singular: 'فعالیت',
+              titleHint: 'مثلاً: پاسخ‌نامه‌ی فعالیت‌ها، آزمایش‌ها و خودآزمایی',
+            ),
             QuestionsAdminTab(),
-            _AddImageTab(),
             _AddBookTab(),
+            StudentsTableTab(),
           ],
         ),
       ),
@@ -82,125 +77,7 @@ class _ContentManagerBody extends StatelessWidget {
 }
 
 // -------------------------------------------------
-// تب ۲: افزودن تصویر آموزشی فصل
-// -------------------------------------------------
-class _AddImageTab extends StatefulWidget {
-  const _AddImageTab();
-
-  @override
-  State<_AddImageTab> createState() => _AddImageTabState();
-}
-
-class _AddImageTabState extends State<_AddImageTab> {
-  int? _chapterIndex;
-  final _captionController = TextEditingController();
-  File? _pickedImage;
-  bool _uploading = false;
-
-  Future<void> _pickImage() async {
-    final picked = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 85);
-    if (picked != null) {
-      setState(() => _pickedImage = File(picked.path));
-    }
-  }
-
-  Future<void> _upload() async {
-    if (_chapterIndex == null || _pickedImage == null) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('فصل و عکس را انتخاب کنید')));
-      return;
-    }
-    setState(() => _uploading = true);
-    final chapterId = 'chapter_${_chapterIndex! + 1}';
-    try {
-      final url = await CloudinaryService.uploadFile(_pickedImage!, folder: 'images/$chapterId');
-      await FirebaseFirestore.instance
-          .collection('images')
-          .doc(chapterId)
-          .collection('items')
-          .add({
-        'url': url,
-        'caption': _captionController.text.trim(),
-        'order': DateTime.now().millisecondsSinceEpoch,
-      });
-      if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('تصویر با موفقیت اضافه شد ✅')));
-        setState(() {
-          _pickedImage = null;
-          _captionController.clear();
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خطا: $e')));
-      }
-    } finally {
-      if (mounted) setState(() => _uploading = false);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('انتخاب فصل', style: TextStyle(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
-          DropdownButtonFormField<int>(
-            value: _chapterIndex,
-            decoration: const InputDecoration(border: OutlineInputBorder()),
-            items: List.generate(
-              scienceGrade9Chapters.length,
-              (i) => DropdownMenuItem(value: i, child: Text('فصل ${i + 1}: ${scienceGrade9Chapters[i]}')),
-            ),
-            onChanged: (v) => setState(() => _chapterIndex = v),
-          ),
-          const SizedBox(height: 16),
-          GestureDetector(
-            onTap: _pickImage,
-            child: Container(
-              height: 180,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                border: Border.all(color: AppTheme.primaryBlue),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: _pickedImage == null
-                  ? const Center(child: Icon(Icons.add_photo_alternate, size: 48, color: AppTheme.primaryBlue))
-                  : ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: Image.file(_pickedImage!, fit: BoxFit.cover),
-                    ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          TextField(
-            controller: _captionController,
-            decoration: const InputDecoration(labelText: 'زیرنویس تصویر', border: OutlineInputBorder()),
-          ),
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: _uploading ? null : _upload,
-              child: _uploading
-                  ? const SizedBox(
-                      height: 20, width: 20,
-                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                  : const Text('آپلود تصویر'),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// -------------------------------------------------
-// تب ۳: افزودن PDF کتاب
+// تب: افزودن PDF کتاب
 // -------------------------------------------------
 class _AddBookTab extends StatefulWidget {
   const _AddBookTab();
