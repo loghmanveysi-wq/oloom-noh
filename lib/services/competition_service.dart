@@ -1,4 +1,4 @@
-// منطق رقابت زنده: اطلاعات بازیکن، انتخاب سؤال‌ها و ثبت آمار
+// منطق رقابت زنده: اطلاعات بازیکن، انتخاب سؤال‌ها، ثبت آمار و امتیاز
 import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -8,6 +8,10 @@ class CompetitionService {
   static const int rounds = 4; // ۴ نوبت یکی‌درمیان: هر بازیکن ۲ نوبت
   static const int perRound = 3; // هر نوبت ۳ سؤال
   static const int total = rounds * perRound; // ۱۲ سؤال
+
+  static const int pointsWin = 20; // امتیاز برد
+  static const int pointsDraw = 10; // امتیاز مساوی
+  static const int pointsLoss = 0; // امتیاز باخت
 
   static FirebaseFirestore get _db => FirebaseFirestore.instance;
   static String? get uid => FirebaseAuth.instance.currentUser?.uid;
@@ -64,23 +68,45 @@ class CompetitionService {
     return '${n.year}-${n.month}-${n.day}';
   }
 
-  /// ثبت نتیجه‌ی بازی در آمار کاربر: result = win | loss | draw
+  /// ثبت نتیجه‌ی بازی: آمار کاربر + امتیاز + جدول رتبه‌بندی عمومی. result = win | loss | draw
   static Future<void> recordResult(String result) async {
     final u = uid;
     if (u == null) return;
     final ref = _db.collection('users').doc(u);
+    final lbRef = _db.collection('leaderboard').doc(u);
     await _db.runTransaction((tx) async {
       final snap = await tx.get(ref);
-      final comp = Map<String, dynamic>.from((snap.data()?['comp'] as Map?) ?? {});
+      final data = snap.data();
+      final comp = Map<String, dynamic>.from((data?['comp'] as Map?) ?? {});
       final day = today();
       final sameDay = comp['day'] == day;
+      final gain =
+          result == 'win' ? pointsWin : (result == 'draw' ? pointsDraw : pointsLoss);
       comp['games'] = _n(comp['games']) + 1;
       comp['wins'] = _n(comp['wins']) + (result == 'win' ? 1 : 0);
       comp['losses'] = _n(comp['losses']) + (result == 'loss' ? 1 : 0);
       comp['draws'] = _n(comp['draws']) + (result == 'draw' ? 1 : 0);
+      comp['points'] = _n(comp['points']) + gain;
       comp['today'] = (sameDay ? _n(comp['today']) : 0) + 1;
       comp['day'] = day;
       tx.update(ref, {'comp': comp});
+
+      var name = (data?['name'] ?? '').toString().trim();
+      if (name.isEmpty) name = 'بازیکن';
+      tx.set(
+        lbRef,
+        {
+          'name': name,
+          'photo': (data?['photoUrl'] ?? '').toString(),
+          'points': comp['points'],
+          'wins': comp['wins'],
+          'losses': comp['losses'],
+          'draws': comp['draws'],
+          'games': comp['games'],
+          'updatedAt': FieldValue.serverTimestamp(),
+        },
+        SetOptions(merge: true),
+      );
     });
   }
 }
