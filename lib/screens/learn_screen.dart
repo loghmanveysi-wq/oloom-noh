@@ -146,7 +146,7 @@ class LearnScreen extends StatelessWidget {
                             Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                             const SizedBox(height: 4),
                             const Text(
-                              'خلاصه  •  جواب فعالیت‌ها  •  خودآزمایی',
+                              'خلاصه فصل  •  فعالیت‌ها',
                               style: TextStyle(fontSize: 11, color: Colors.grey),
                             ),
                           ],
