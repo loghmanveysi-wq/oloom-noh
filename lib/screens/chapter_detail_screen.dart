@@ -1,6 +1,5 @@
-// صفحه جزئیات هر فصل: خلاصه فصل، جواب فعالیت‌ها، آزمایش‌ها، خودآزمایی‌ها، گالری تصاویر + آزمون
+// صفحه جزئیات هر فصل: خلاصه فصل و فعالیت‌ها (پاسخ‌نامه‌ی فعالیت‌ها، آزمایش‌ها و خودآزمایی) + آزمون
 import 'package:flutter/material.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../theme/app_theme.dart';
 import '../services/sound_service.dart';
@@ -31,10 +30,7 @@ class _ChapterDetailScreenState extends State<ChapterDetailScreen>
     with SingleTickerProviderStateMixin {
   static const List<_TabInfo> _tabs = [
     _TabInfo('خلاصه فصل', Icons.menu_book_rounded),
-    _TabInfo('جواب فعالیت‌ها', Icons.edit_note_rounded),
-    _TabInfo('آزمایش‌ها', Icons.science_rounded),
-    _TabInfo('خودآزمایی‌ها', Icons.help_outline_rounded),
-    _TabInfo('گالری تصاویر', Icons.photo_library_rounded),
+    _TabInfo('فعالیت‌ها', Icons.edit_note_rounded),
   ];
 
   late final TabController _tc = TabController(length: _tabs.length, vsync: this);
@@ -59,7 +55,7 @@ class _ChapterDetailScreenState extends State<ChapterDetailScreen>
         },
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
           decoration: BoxDecoration(
             color: selected ? Colors.white : Colors.white.withOpacity(0.16),
             borderRadius: BorderRadius.circular(22),
@@ -134,22 +130,7 @@ class _ChapterDetailScreenState extends State<ChapterDetailScreen>
         controller: _tc,
         children: [
           _SummaryTab(chapterId: chapterId),
-          _AnswersTab(
-            chapterId: chapterId,
-            collection: 'activities',
-            emptyText: 'هنوز جواب فعالیتی برای این فصل ثبت نشده است.',
-          ),
-          _AnswersTab(
-            chapterId: chapterId,
-            collection: 'experiments',
-            emptyText: 'هنوز آزمایشی برای این فصل ثبت نشده است.',
-          ),
-          _AnswersTab(
-            chapterId: chapterId,
-            collection: 'selfTests',
-            emptyText: 'هنوز خودآزمایی‌ای برای این فصل ثبت نشده است.',
-          ),
-          _GalleryTab(chapterId: chapterId),
+          _ActivitiesTab(chapterId: chapterId),
         ],
       ),
     );
@@ -229,22 +210,20 @@ class _SummaryTabState extends State<_SummaryTab> with AutomaticKeepAliveClientM
   }
 }
 
-// ------------------- جواب فعالیت‌ها / آزمایش‌ها / خودآزمایی‌ها -------------------
-class _AnswersTab extends StatefulWidget {
+// ------------------------------ فعالیت‌ها ------------------------------
+class _ActivitiesTab extends StatefulWidget {
   final String chapterId;
-  final String collection; // activities | experiments | selfTests
-  final String emptyText;
-  const _AnswersTab({required this.chapterId, required this.collection, required this.emptyText});
+  const _ActivitiesTab({required this.chapterId});
 
   @override
-  State<_AnswersTab> createState() => _AnswersTabState();
+  State<_ActivitiesTab> createState() => _ActivitiesTabState();
 }
 
-class _AnswersTabState extends State<_AnswersTab> with AutomaticKeepAliveClientMixin {
+class _ActivitiesTabState extends State<_ActivitiesTab> with AutomaticKeepAliveClientMixin {
   late final Stream<QuerySnapshot<Map<String, dynamic>>> _stream = FirebaseFirestore.instance
       .collection('chapterContent')
       .doc(widget.chapterId)
-      .collection(widget.collection)
+      .collection('activities')
       .orderBy('order')
       .snapshots();
 
@@ -260,7 +239,7 @@ class _AnswersTabState extends State<_AnswersTab> with AutomaticKeepAliveClientM
         if (snapshot.hasError) return _centerMessage('خطا در بارگذاری: ${snapshot.error}');
         if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
         final docs = snapshot.data!.docs;
-        if (docs.isEmpty) return _centerMessage(widget.emptyText);
+        if (docs.isEmpty) return _centerMessage('هنوز فعالیتی برای این فصل ثبت نشده است.');
         return ListView.builder(
           padding: const EdgeInsets.fromLTRB(12, 12, 12, 96),
           itemCount: docs.length,
@@ -293,81 +272,6 @@ class _AnswersTabState extends State<_AnswersTab> with AutomaticKeepAliveClientM
                       ),
                     ),
                   AttachmentsView(items: parseAttachments(d['attachments'])),
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-}
-
-// ------------------------------ گالری ------------------------------
-class _GalleryTab extends StatefulWidget {
-  final String chapterId;
-  const _GalleryTab({required this.chapterId});
-
-  @override
-  State<_GalleryTab> createState() => _GalleryTabState();
-}
-
-class _GalleryTabState extends State<_GalleryTab> with AutomaticKeepAliveClientMixin {
-  late final Stream<QuerySnapshot<Map<String, dynamic>>> _stream = FirebaseFirestore.instance
-      .collection('images')
-      .doc(widget.chapterId)
-      .collection('items')
-      .orderBy('order')
-      .snapshots();
-
-  @override
-  bool get wantKeepAlive => true;
-
-  @override
-  Widget build(BuildContext context) {
-    super.build(context);
-    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-      stream: _stream,
-      builder: (context, snapshot) {
-        if (snapshot.hasError) return _centerMessage('خطا در بارگذاری: ${snapshot.error}');
-        if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
-        final docs = snapshot.data!.docs;
-        if (docs.isEmpty) return _centerMessage('هنوز تصویری برای این فصل بارگذاری نشده است.');
-        return GridView.builder(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            crossAxisSpacing: 10,
-            mainAxisSpacing: 10,
-            childAspectRatio: 0.85,
-          ),
-          itemCount: docs.length,
-          itemBuilder: (context, i) {
-            final img = docs[i].data();
-            return ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: Column(
-                children: [
-                  Expanded(
-                    child: CachedNetworkImage(
-                      imageUrl: (img['url'] ?? '').toString(),
-                      fit: BoxFit.cover,
-                      width: double.infinity,
-                      memCacheWidth: 600,
-                      placeholder: (_, __) => const Center(child: CircularProgressIndicator()),
-                      errorWidget: (_, __, ___) => const Icon(Icons.broken_image),
-                    ),
-                  ),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(6),
-                    color: Colors.black54,
-                    child: Text(
-                      (img['caption'] ?? '').toString(),
-                      style: const TextStyle(color: Colors.white, fontSize: 12),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
                 ],
               ),
             );
