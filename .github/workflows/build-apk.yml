@@ -23,7 +23,9 @@ jobs:
       - name: ساخت پوشه‌ی android
         run: flutter create --platforms=android --org com.veisi --project-name oloom_noh .
 
-      - name: آماده‌سازی android
+      - name: آماده‌سازی android و امضا
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
         run: python3 tools/prepare_android.py
 
       - name: نصب پکیج‌ها
@@ -38,6 +40,13 @@ jobs:
           else
             flutter build apk --release --split-per-abi
           fi
+
+      - name: نمایش امضای APK (نباید Android Debug باشد)
+        run: |
+          for f in build/app/outputs/flutter-apk/*-release.apk; do
+            echo "== $f"
+            keytool -printcert -jarfile "$f" | grep -E "Owner|SHA256"
+          done
 
       - uses: actions/upload-artifact@v4
         with:
