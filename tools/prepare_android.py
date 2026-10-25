@@ -5,6 +5,7 @@
   2) فعال کردن پلاگین google-services
   3) minSdk = 21 ، targetSdk = 34 ، compileSdk = 34 (شرط بازار و مایکت)
   4) مجوز INTERNET + UCropActivity (برای برش عکس) + queries (برای url_launcher)
+  5) امضای نسخه‌ی نهایی با کلید دائمی (برای آپدیت و انتشار در بازار/مایکت)
 اگر هر مرحله پیدا نشد، با پیام خطا متوقف می‌شود تا در لاگ معلوم شود.
 """
 import os
@@ -122,3 +123,40 @@ if "<queries>" not in man:
         1)
 write(man_p, man)
 print("manifest patched")
+
+# 5) امضای نسخه‌ی نهایی با کلید دائمی (android-signing/oloom-release.jks)
+jks = os.path.abspath("android-signing/oloom-release.jks")
+pwd = os.environ.get("KEYSTORE_PASSWORD", "")
+if os.path.exists(jks) and pwd:
+    app = read(app_p)
+    if "signingConfigs.release" not in app:
+        app, n = re.subn(r"signingConfig\s+signingConfigs\.debug", "signingConfig signingConfigs.release", app)
+        if n == 0:
+            fail("signingConfig در app/build.gradle پیدا نشد.")
+        block = """    signingConfigs {
+        release {
+            def props = new Properties()
+            def pf = rootProject.file("key.properties")
+            if (pf.exists()) { pf.withInputStream { props.load(it) } }
+            keyAlias props['keyAlias']
+            keyPassword props['keyPassword']
+            storeFile props['storeFile'] ? file(props['storeFile']) : null
+            storePassword props['storePassword']
+            storeType 'pkcs12'
+        }
+    }
+
+"""
+        app, n = re.subn(r"\n(\s*)buildTypes\s*\{", lambda m: "\n" + block + m.group(1) + "buildTypes {", app, count=1)
+        if n == 0:
+            fail("بلوک buildTypes در app/build.gradle پیدا نشد.")
+        write(app_p, app)
+    write(
+        "android/key.properties",
+        "storePassword=" + pwd + "\nkeyPassword=" + pwd + "\nkeyAlias=oloom\nstoreFile=" + jks + "\n",
+    )
+    print("release signing configured")
+elif pwd and not os.path.exists(jks):
+    fail("KEYSTORE_PASSWORD تنظیم شده ولی فایل کلید پیدا نشد. اول workflow ساخت کلید را اجرا کنید.")
+else:
+    print("WARNING: کلید دائمی تنظیم نشده؛ APK با کلید دیباگ امضا می‌شود (برای انتشار مناسب نیست).")
