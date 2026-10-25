@@ -3,9 +3,9 @@
 آماده‌سازی پوشه‌ی android بعد از `flutter create`:
   1) کپی google-services.json از ریشه‌ی پروژه به android/app
   2) فعال کردن پلاگین google-services
-  3) minSdk = 21
+  3) minSdk = 21 ، targetSdk = 34 ، compileSdk = 34 (شرط بازار و مایکت)
   4) مجوز INTERNET + UCropActivity (برای برش عکس) + queries (برای url_launcher)
-اگر هر مرحله پیدا نشد، با پیام خطا متوقف می‌شود تا در لاگ Codemagic معلوم باشد.
+اگر هر مرحله پیدا نشد، با پیام خطا متوقف می‌شود تا در لاگ معلوم شود.
 """
 import os
 import re
@@ -74,12 +74,25 @@ else:
         app += "\napply plugin: 'com.google.gms.google-services'\n"
     print("google-services plugin added (old template)")
 
-# 3) minSdk
+# 3) minSdk = 21 ، targetSdk = 34 ، compileSdk = 34
 app, n = re.subn(r"minSdk(Version)?\s+flutter\.minSdkVersion", "minSdkVersion 21", app)
 if n == 0 and "minSdkVersion 21" not in app:
     fail("minSdkVersion در app/build.gradle پیدا نشد.")
+
+app, n = re.subn(r"targetSdk(Version)?\s+flutter\.targetSdkVersion", "targetSdkVersion 34", app)
+if n == 0 and "targetSdkVersion 34" not in app:
+    fail("targetSdkVersion در app/build.gradle پیدا نشد.")
+
+app, _ = re.subn(r"compileSdk(Version)?\s+flutter\.compileSdkVersion", "compileSdkVersion 34", app)
 write(app_p, app)
-print("minSdk set to 21")
+print("minSdk=21, targetSdk=34, compileSdk=34")
+
+# جلوگیری از هشدار/خطای نسخه‌ی قدیمی‌تر Android Gradle Plugin با compileSdk 34
+gp_p = "android/gradle.properties"
+gp = read(gp_p) if os.path.exists(gp_p) else ""
+if "android.suppressUnsupportedCompileSdk" not in gp:
+    write(gp_p, gp.rstrip("\n") + "\nandroid.suppressUnsupportedCompileSdk=34\n")
+    print("gradle.properties updated")
 
 # 4) AndroidManifest
 man_p = "android/app/src/main/AndroidManifest.xml"
