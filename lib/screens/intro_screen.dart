@@ -1,10 +1,11 @@
-// صفحه «خانه» (دکمه‌ی وسط): معرفی نرم‌افزار و معرفی سازنده؛ همه‌چیز در یک صفحه و بدون اسکرول
+// صفحه «خانه» (دکمه‌ی وسط): معرفی نرم‌افزار، سازنده و تماس با ما؛ همه‌چیز در یک صفحه و بدون اسکرول
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../theme/app_theme.dart';
 import '../widgets/fade_slide.dart';
 import '../services/admin_service.dart';
@@ -26,6 +27,8 @@ class IntroScreen extends StatefulWidget {
 
 class _IntroScreenState extends State<IntroScreen> {
   static const String _teacherPhoto = 'assets/images/teacher.jpg';
+  // آیدی روبیکای سازنده. اگر لینک درست باز نشد، فقط همین یک خط را اصلاح کنید.
+  static const String _rubikaId = 'Veysi.65';
 
   bool _sound = SoundService.enabled;
   late final Stream<bool> _admin = AdminService.isTeacherStream();
@@ -48,8 +51,38 @@ class _IntroScreenState extends State<IntroScreen> {
     Navigator.push(context, MaterialPageRoute(builder: (_) => page));
   }
 
+  // باز کردن پروفایل روبیکا؛ اگر باز نشد، آیدی کپی می‌شود
+  Future<void> _openRubika() async {
+    SoundService.play(Sfx.tap);
+    var ok = false;
+    try {
+      ok = await launchUrl(
+        Uri.parse('https://rubika.ir/$_rubikaId'),
+        mode: LaunchMode.externalApplication,
+      );
+    } catch (_) {
+      ok = false;
+    }
+    if (!ok) {
+      await Clipboard.setData(const ClipboardData(text: _rubikaId));
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('روبیکا باز نشد؛ آیدی کپی شد: $_rubikaId')),
+      );
+    }
+  }
+
+  Future<void> _copyRubika() async {
+    await Clipboard.setData(const ClipboardData(text: _rubikaId));
+    SoundService.play(Sfx.tap);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('آیدی روبیکا کپی شد: $_rubikaId')),
+    );
+  }
+
   Widget _section(Widget child) =>
-      Padding(padding: const EdgeInsets.fromLTRB(16, 6, 16, 6), child: child);
+      Padding(padding: const EdgeInsets.fromLTRB(16, 5, 16, 5), child: child);
 
   // همه‌ی بخش‌ها در یک صفحه جا می‌شوند: اگر صفحه بلند باشد فاصله‌ها بیشتر می‌شود،
   // و اگر کوتاه باشد (گوشی کوچک) کل صفحه کمی کوچک‌تر نمایش داده می‌شود؛ هرگز اسکرول ندارد.
@@ -73,7 +106,7 @@ class _IntroScreenState extends State<IntroScreen> {
                     _section(FadeSlide(child: _aboutCard())),
                     _section(FadeSlide(delayMs: 100, child: _aiBanner())),
                     _section(FadeSlide(delayMs: 180, child: _creatorCard())),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 4),
                   ],
                 ),
               ),
@@ -112,12 +145,12 @@ class _IntroScreenState extends State<IntroScreen> {
           Positioned(top: -40, left: -30, child: _bubble(130, 0.10)),
           Positioned(bottom: -50, right: -20, child: _bubble(150, 0.08)),
           Padding(
-            padding: EdgeInsets.fromLTRB(8, top + 4, 8, 16),
+            padding: EdgeInsets.fromLTRB(8, top + 4, 8, 12),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Row(children: [_profileButton(), const Spacer(), ..._topIcons(context)]),
-                const SizedBox(height: 4),
+                const SizedBox(height: 2),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -366,6 +399,67 @@ class _IntroScreenState extends State<IntroScreen> {
     );
   }
 
+  // دکمه‌ی «تماس با ما»: لمس = باز کردن روبیکا، نگه‌داشتن یا آیکون کپی = کپی آیدی
+  Widget _contactButton() {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        gradient: const LinearGradient(
+          colors: [Color(0xFF7B1FA2), Color(0xFF3F51B5)],
+          begin: Alignment.topRight,
+          end: Alignment.bottomLeft,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF7B1FA2).withOpacity(0.35),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        type: MaterialType.transparency,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: _openRubika,
+          onLongPress: _copyRubika,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+            child: Row(
+              children: [
+                const Icon(Icons.chat_bubble_rounded, color: Colors.white, size: 22),
+                const SizedBox(width: 10),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('تماس با ما در روبیکا',
+                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13.5)),
+                      Directionality(
+                        textDirection: TextDirection.ltr,
+                        child: Text('@$_rubikaId',
+                            style: TextStyle(color: Colors.white70, fontSize: 12.5)),
+                      ),
+                    ],
+                  ),
+                ),
+                GestureDetector(
+                  onTap: _copyRubika,
+                  behavior: HitTestBehavior.opaque,
+                  child: const Padding(
+                    padding: EdgeInsets.all(6),
+                    child: Icon(Icons.copy_rounded, color: Colors.white70, size: 18),
+                  ),
+                ),
+                const Icon(Icons.open_in_new_rounded, color: Colors.white, size: 20),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _creatorCard() {
     return Card(
       margin: EdgeInsets.zero,
@@ -427,6 +521,8 @@ class _IntroScreenState extends State<IntroScreen> {
                 ),
               ],
             ),
+            const SizedBox(height: 10),
+            _contactButton(),
           ],
         ),
       ),
