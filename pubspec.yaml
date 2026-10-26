@@ -1,7 +1,7 @@
 name: oloom_noh
 description: "علوم نهم – استاد ویسی: اپلیکیشن آموزشی علوم تجربی پایه نهم"
 publish_to: 'none'
-version: 1.0.1+2    # آپدیت اول
+version: 1.0.1+3    # آپدیت اول
 
 environment:
   sdk: '>=3.3.0 <4.0.0'
