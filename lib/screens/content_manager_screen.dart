@@ -1,4 +1,5 @@
 // پنل مدیریت (فقط برای مدیر): خلاصه فصل، فعالیت‌ها، سؤال آزمون، کتاب PDF و جدول دانش‌آموزان
+import '../widgets/app_background.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../theme/app_theme.dart';
@@ -21,7 +22,7 @@ class ContentManagerScreen extends StatelessWidget {
         }
         if (snapshot.data != true) {
           return Scaffold(
-            appBar: AppBar(title: const Text('پنل مدیریت')),
+            appBar: GAppBar(title: const Text('پنل مدیریت')),
             body: const Center(child: Text('این بخش فقط برای مدیر است.')),
           );
         }
@@ -39,7 +40,7 @@ class _ContentManagerBody extends StatelessWidget {
     return DefaultTabController(
       length: 5,
       child: Scaffold(
-        appBar: AppBar(
+        appBar: GAppBar(
           title: const Text('پنل مدیریت'),
           bottom: const BoxedTabBar(
             labels: [
@@ -99,10 +100,7 @@ class _AddBookTabState extends State<_AddBookTab> {
   }
 
   Future<void> _loadCurrent() async {
-    final doc = await FirebaseFirestore.instance
-        .collection('books')
-        .doc('full_book')
-        .get();
+    final doc = await FirebaseFirestore.instance.collection('books').doc('full_book').get();
     final data = doc.data();
     if (data != null && mounted) {
       setState(() {
@@ -113,11 +111,9 @@ class _AddBookTabState extends State<_AddBookTab> {
   }
 
   Future<void> _save() async {
-    if (_titleController.text.trim().isEmpty ||
-        _urlController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('عنوان و لینک PDF را وارد کنید')),
-      );
+    if (_titleController.text.trim().isEmpty || _urlController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('عنوان و لینک PDF را وارد کنید')));
       return;
     }
     setState(() => _saving = true);
@@ -128,11 +124,8 @@ class _AddBookTabState extends State<_AddBookTab> {
         'uploadedAt': FieldValue.serverTimestamp(),
       });
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('کتاب با موفقیت ثبت/به‌روزرسانی شد \u2705'),
-          ),
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('کتاب با موفقیت ثبت/به\u200cروزرسانی شد \u2705')));
         setState(() {
           _currentUrl = _urlController.text.trim();
           _urlController.clear();
@@ -140,8 +133,7 @@ class _AddBookTabState extends State<_AddBookTab> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('خطا: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خطا: $e')));
       }
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -175,19 +167,13 @@ class _AddBookTabState extends State<_AddBookTab> {
                 color: Colors.green.withOpacity(0.08),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Text(
-                'کتاب فعلی ثبت شده است \u2705',
-                style: TextStyle(color: Colors.green.shade800),
-              ),
+              child: Text('کتاب فعلی ثبت شده است \u2705', style: TextStyle(color: Colors.green.shade800)),
             ),
             const SizedBox(height: 16),
           ],
           TextField(
             controller: _titleController,
-            decoration: const InputDecoration(
-              labelText: 'عنوان کتاب',
-              border: OutlineInputBorder(),
-            ),
+            decoration: const InputDecoration(labelText: 'عنوان کتاب', border: OutlineInputBorder()),
           ),
           const SizedBox(height: 16),
           TextField(
@@ -205,14 +191,9 @@ class _AddBookTabState extends State<_AddBookTab> {
               onPressed: _saving ? null : _save,
               child: _saving
                   ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 2,
-                      ),
-                    )
-                  : const Text('ثبت / به‌روزرسانی کتاب'),
+                      height: 20, width: 20,
+                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                  : const Text('ثبت / به\u200cروزرسانی کتاب'),
             ),
           ),
         ],
