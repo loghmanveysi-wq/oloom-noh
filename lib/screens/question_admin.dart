@@ -1,4 +1,5 @@
 // مدیریت بانک سؤال آزمون (فقط مدیر): افزودن، ویرایش، حذف، تصویر سؤال و توضیح پاسخ
+import '../widgets/app_background.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -319,7 +320,7 @@ class _QuestionEditorPageState extends State<_QuestionEditorPage> {
   Widget build(BuildContext context) {
     final hasImage = _picked != null || _imageUrl != null;
     return Scaffold(
-      appBar: AppBar(title: Text(widget.doc == null ? 'افزودن سؤال' : 'ویرایش سؤال')),
+      appBar: GAppBar(title: Text(widget.doc == null ? 'افزودن سؤال' : 'ویرایش سؤال')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
