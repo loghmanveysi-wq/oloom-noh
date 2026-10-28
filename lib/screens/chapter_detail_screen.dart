@@ -1,4 +1,5 @@
 // صفحه جزئیات هر فصل: خلاصه فصل و فعالیت‌ها (پاسخ‌نامه‌ی فعالیت‌ها، آزمایش‌ها و خودآزمایی) + آزمون
+import '../widgets/app_background.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../theme/app_theme.dart';
@@ -89,7 +90,7 @@ class _ChapterDetailScreenState extends State<ChapterDetailScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
+      appBar: GAppBar(
         title: Text(widget.chapterTitle),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(56),
