@@ -1,4 +1,5 @@
 // ورود مخصوص مدیر (سازنده‌ی اپ) با نام کاربری و رمز عبور
+import '../widgets/app_background.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -63,7 +64,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('ورود مدیر')),
+      appBar: GAppBar(title: const Text('ورود مدیر')),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
