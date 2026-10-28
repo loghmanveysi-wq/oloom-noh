@@ -1,4 +1,5 @@
 // تب «رقابت» در نوار پایین: رقابت زنده + رتبه‌بندی + آزمون فصل‌ها
+import '../widgets/app_background.dart';
 import 'package:flutter/material.dart';
 import '../widgets/boxed_tab_bar.dart';
 import 'competition_home_screen.dart';
@@ -13,7 +14,8 @@ class CompetitionTabScreen extends StatelessWidget {
     return DefaultTabController(
       length: 3,
       child: Scaffold(
-        appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        appBar: GAppBar(
           title: const Text('رقابت'),
           bottom: const BoxedTabBar(
             labels: ['رقابت زنده', 'رتبه‌بندی', 'آزمون فصل‌ها'],
