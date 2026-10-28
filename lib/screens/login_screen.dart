@@ -1,4 +1,5 @@
 // صفحه ورود و ثبت‌نام: دانش‌آموز (شماره موبایل + رمز) و دبیر (ایمیل + رمز)
+import '../widgets/app_background.dart';
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import '../theme/app_theme.dart';
@@ -105,7 +106,9 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
 
-    return Scaffold(
+    return AppBackground(
+      child: Scaffold(
+      backgroundColor: Colors.transparent,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -207,6 +210,7 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ),
         ),
+      ),
       ),
     );
   }
