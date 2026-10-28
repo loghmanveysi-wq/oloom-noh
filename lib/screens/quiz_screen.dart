@@ -1,4 +1,5 @@
 // آزمون پایان فصل: سؤال تصادفی، گزینه‌های بُرزده، مرور اشتباهات و ثبت نمره (فقط یک‌بار)
+import '../widgets/app_background.dart';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -152,7 +153,7 @@ class _QuizScreenState extends State<QuizScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('آزمون: ${widget.chapterTitle}')),
+      appBar: GAppBar(title: Text('آزمون: ${widget.chapterTitle}')),
       body: _body(),
     );
   }
