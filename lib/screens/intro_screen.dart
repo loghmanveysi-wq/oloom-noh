@@ -29,7 +29,7 @@ class IntroScreen extends StatefulWidget {
 class _IntroScreenState extends State<IntroScreen> {
   static const String _teacherPhoto = 'assets/images/teacher.jpg';
   // آیدی روبیکای سازنده. اگر لینک درست باز نشد، فقط همین یک خط را اصلاح کنید.
-  static const String _rubikaId = 'Veysi.65';
+  static const String _rubikaId = 'Veysi_ai';
 
   bool _sound = SoundService.enabled;
   late final Stream<bool> _admin = AdminService.isTeacherStream();
