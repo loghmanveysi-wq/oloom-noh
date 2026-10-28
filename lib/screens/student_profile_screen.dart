@@ -1,4 +1,5 @@
 // پروفایل دانش‌آموز: عکس شخصی، مشخصات، آمار آزمون‌ها، تنظیمات و خروج از حساب
+import '../widgets/app_background.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -176,7 +177,7 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('پروفایل من')),
+      appBar: GAppBar(title: const Text('پروفایل من')),
       body: _user == null
           ? const Center(child: Text('ابتدا وارد حساب خود شوید.'))
           : ListView(
