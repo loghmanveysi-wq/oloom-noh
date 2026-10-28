@@ -1,4 +1,5 @@
 // صفحه چت با دستیار هوش مصنوعی علوم نهم
+import '../widgets/app_background.dart';
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../services/ai_assistant_service.dart';
@@ -66,7 +67,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('هوش مصنوعی – دستیار علوم')),
+      appBar: GAppBar(title: const Text('هوش مصنوعی – دستیار علوم')),
       body: Column(
         children: [
           Expanded(
