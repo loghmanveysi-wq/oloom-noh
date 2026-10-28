@@ -1,4 +1,5 @@
 // صفحه پروفایل استاد لقمان ویسی با قابلیت تغییر عکس پروفایل
+import '../widgets/app_background.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -112,7 +113,7 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('پروفایل استاد')),
+      appBar: GAppBar(title: const Text('پروفایل استاد')),
       body: StreamBuilder<DocumentSnapshot>(
         stream: FirebaseFirestore.instance.collection('teachers').doc(teacherId).snapshots(),
         builder: (context, snapshot) {
