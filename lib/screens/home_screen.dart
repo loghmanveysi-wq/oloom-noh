@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../services/sound_service.dart';
+import '../widgets/app_background.dart';
 import 'learn_screen.dart';
 import 'book_list_screen.dart';
 import 'intro_screen.dart';
@@ -51,21 +52,24 @@ class _HomeScreenState extends State<HomeScreen> {
       onPopInvoked: (didPop) {
         if (!didPop) _go(_homeIndex);
       },
-      child: Scaffold(
-        body: IndexedStack(
-          index: _index,
-          children: [
-            for (var i = 0; i < 5; i++) _visited.contains(i) ? _page(i) : const SizedBox.shrink(),
-          ],
+      child: AppBackground(
+        child: Scaffold(
+          backgroundColor: Colors.transparent,
+          body: IndexedStack(
+            index: _index,
+            children: [
+              for (var i = 0; i < 5; i++) _visited.contains(i) ? _page(i) : const SizedBox.shrink(),
+            ],
+          ),
+          bottomNavigationBar: _bottomBar(),
         ),
-        bottomNavigationBar: _bottomBar(),
       ),
     );
   }
 
   Widget _bottomBar() {
     final theme = Theme.of(context);
-    final barColor = theme.cardTheme.color ?? theme.colorScheme.surface;
+    final barColor = (theme.cardTheme.color ?? theme.colorScheme.surface).withOpacity(0.96);
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -81,7 +85,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Container(
                   decoration: BoxDecoration(
                     color: barColor,
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(26)),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withOpacity(0.12),
