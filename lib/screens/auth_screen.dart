@@ -1,5 +1,6 @@
 // ورود / ثبت‌نام دانش‌آموزان: ثبت‌نام با مشخصات کامل، ورود بعدی فقط با شماره موبایل و رمز عبور
 // بازیابی رمز عبور از طریق ایمیلی که هنگام ثبت‌نام ثبت شده است.
+import '../widgets/app_background.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -296,7 +297,9 @@ class _AuthScreenState extends State<AuthScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return AppBackground(
+      child: Scaffold(
+      backgroundColor: Colors.transparent,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -381,6 +384,7 @@ class _AuthScreenState extends State<AuthScreen> {
             ],
           ),
         ),
+      ),
       ),
     );
   }
