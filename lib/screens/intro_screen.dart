@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../theme/app_theme.dart';
 import '../widgets/fade_slide.dart';
+import '../widgets/app_background.dart';
 import '../services/admin_service.dart';
 import '../services/sound_service.dart';
 import '../services/theme_provider.dart';
@@ -170,9 +171,9 @@ class _IntroScreenState extends State<IntroScreen> {
                     const Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
+                        ShimmerText(
                           'علوم نهم',
-                          style: TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold),
+                          style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold),
                         ),
                         Text(
                           'همراه شما برای یادگیری علوم تجربی',
