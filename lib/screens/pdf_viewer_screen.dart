@@ -1,4 +1,5 @@
 // صفحه نمایش PDF کتاب با بوکمارک، جستجو، ذخیره آخرین صفحه
+import '../widgets/app_background.dart';
 import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -63,7 +64,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
+      appBar: GAppBar(
         title: Text(widget.title),
         actions: [
           IconButton(
