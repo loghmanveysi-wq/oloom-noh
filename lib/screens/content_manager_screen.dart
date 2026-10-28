@@ -1,36 +1,74 @@
-// داشبورد نظارتی دبیر: آمار کلی + لیست دانش‌آموزان + رصد لحظه‌ای
-import '../widgets/app_background.dart';
+// پنل مدیریت (فقط برای مدیر): خلاصه فصل، فعالیت‌ها، سؤال آزمون، کتاب PDF و جدول دانش‌آموزان
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:fl_chart/fl_chart.dart';
 import '../theme/app_theme.dart';
+import '../services/admin_service.dart';
 import '../widgets/boxed_tab_bar.dart';
-class AdminDashboardScreen extends StatelessWidget {
-  const AdminDashboardScreen({super.key});
+import 'chapter_content_admin.dart';
+import 'question_admin.dart';
+import 'students_table_tab.dart';
+
+class ContentManagerScreen extends StatelessWidget {
+  const ContentManagerScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<bool>(
+      stream: AdminService.isTeacherStream(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(body: Center(child: CircularProgressIndicator()));
+        }
+        if (snapshot.data != true) {
+          return Scaffold(
+            appBar: AppBar(title: const Text('پنل مدیریت')),
+            body: const Center(child: Text('این بخش فقط برای مدیر است.')),
+          );
+        }
+        return const _ContentManagerBody();
+      },
+    );
+  }
+}
+
+class _ContentManagerBody extends StatelessWidget {
+  const _ContentManagerBody();
 
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 4,
+      length: 5,
       child: Scaffold(
-        appBar: GAppBar(
-          title: const Text('داشبورد دبیر'),
+        appBar: AppBar(
+          title: const Text('پنل مدیریت'),
           bottom: const BoxedTabBar(
-            labels: ['آمار کلی', 'دانش‌آموزان', 'رصد لحظه‌ای', 'هشدارها'],
+            labels: [
+              'خلاصه فصل',
+              'فعالیت‌ها',
+              'سؤال آزمون',
+              'کتاب PDF',
+              'دانش‌آموزان',
+            ],
             icons: [
-              Icons.insights_rounded,
+              Icons.menu_book_rounded,
+              Icons.edit_note_rounded,
+              Icons.quiz_rounded,
+              Icons.picture_as_pdf_rounded,
               Icons.groups_rounded,
-              Icons.sensors_rounded,
-              Icons.warning_amber_rounded,
             ],
           ),
         ),
-        body: TabBarView(
+        body: const TabBarView(
           children: [
-            _StatsTab(),
-            _StudentsTab(),
-            _LiveTab(),
-            _AlertsTab(),
+            SummaryAdminTab(),
+            ItemsAdminTab(
+              collection: 'activities',
+              singular: 'فعالیت',
+              titleHint: 'مثلاً: پاسخ‌نامه‌ی فعالیت‌ها، آزمایش‌ها و خودآزمایی',
+            ),
+            QuestionsAdminTab(),
+            _AddBookTab(),
+            StudentsTableTab(),
           ],
         ),
       ),
@@ -38,168 +76,147 @@ class AdminDashboardScreen extends StatelessWidget {
   }
 }
 
-class _StatsTab extends StatelessWidget {
-  const _StatsTab();
+// -------------------------------------------------
+// تب: افزودن PDF کتاب
+// -------------------------------------------------
+class _AddBookTab extends StatefulWidget {
+  const _AddBookTab();
+
+  @override
+  State<_AddBookTab> createState() => _AddBookTabState();
+}
+
+class _AddBookTabState extends State<_AddBookTab> {
+  final _titleController = TextEditingController(text: 'کتاب علوم نهم');
+  final _urlController = TextEditingController();
+  bool _saving = false;
+  String? _currentUrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCurrent();
+  }
+
+  Future<void> _loadCurrent() async {
+    final doc = await FirebaseFirestore.instance
+        .collection('books')
+        .doc('full_book')
+        .get();
+    final data = doc.data();
+    if (data != null && mounted) {
+      setState(() {
+        _currentUrl = data['pdfUrl'];
+        if (data['title'] != null) _titleController.text = data['title'];
+      });
+    }
+  }
+
+  Future<void> _save() async {
+    if (_titleController.text.trim().isEmpty ||
+        _urlController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('عنوان و لینک PDF را وارد کنید')),
+      );
+      return;
+    }
+    setState(() => _saving = true);
+    try {
+      await FirebaseFirestore.instance.collection('books').doc('full_book').set({
+        'title': _titleController.text.trim(),
+        'pdfUrl': _urlController.text.trim(),
+        'uploadedAt': FieldValue.serverTimestamp(),
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('کتاب با موفقیت ثبت/به‌روزرسانی شد \u2705'),
+          ),
+        );
+        setState(() {
+          _currentUrl = _urlController.text.trim();
+          _urlController.clear();
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('خطا: $e')));
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance.collection('users').where('role', isEqualTo: 'student').snapshots(),
-      builder: (context, snapshot) {
-        final total = snapshot.data?.docs.length ?? 0;
-        final online = snapshot.data?.docs.where((d) => (d.data() as Map)['onlineStatus'] == true).length ?? 0;
-
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  _statCard('تعداد دانش‌آموزان', '$total', Icons.groups, AppTheme.primaryBlue),
-                  const SizedBox(width: 10),
-                  _statCard('آنلاین‌ها', '$online', Icons.circle, Colors.green),
-                ],
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppTheme.primaryBlue.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Text(
+              'راهنما: کل فایل PDF کتاب علوم نهم را اول در سایت Cloudinary (بخش Media Library) آپلود کنید، '
+              'سپس لینک آن (secure_url) را اینجا paste کنید. این کتاب مستقل از فصل\u200cهاست و در بخش «کتاب» نمایش داده می\u200cشود.',
+              style: TextStyle(fontSize: 13),
+            ),
+          ),
+          const SizedBox(height: 16),
+          if (_currentUrl != null && _currentUrl!.isNotEmpty) ...[
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.green.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(10),
               ),
-              const SizedBox(height: 24),
-              const Text('روند مطالعه هفتگی', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-              const SizedBox(height: 12),
-              SizedBox(
-                height: 200,
-                child: LineChart(
-                  LineChartData(
-                    gridData: const FlGridData(show: true),
-                    titlesData: const FlTitlesData(show: true),
-                    lineBarsData: [
-                      LineChartBarData(
-                        // نمونه داده - در نسخه نهایی از فعالیت‌های واقعی Firestore جمع‌آوری می‌شود
-                        spots: const [
-                          FlSpot(0, 3), FlSpot(1, 5), FlSpot(2, 4),
-                          FlSpot(3, 7), FlSpot(4, 6), FlSpot(5, 8), FlSpot(6, 5),
-                        ],
-                        isCurved: true,
-                        color: AppTheme.accentOrange,
-                        barWidth: 3,
+              child: Text(
+                'کتاب فعلی ثبت شده است \u2705',
+                style: TextStyle(color: Colors.green.shade800),
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+          TextField(
+            controller: _titleController,
+            decoration: const InputDecoration(
+              labelText: 'عنوان کتاب',
+              border: OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _urlController,
+            decoration: const InputDecoration(
+              labelText: 'لینک PDF جدید (از Cloudinary)',
+              hintText: 'https://res.cloudinary.com/...',
+              border: OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: _saving ? null : _save,
+              child: _saving
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
                       ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
+                    )
+                  : const Text('ثبت / به‌روزرسانی کتاب'),
+            ),
           ),
-        );
-      },
-    );
-  }
-
-  Widget _statCard(String label, String value, IconData icon, Color color) {
-    return Expanded(
-      child: Card(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              Icon(icon, color: color, size: 28),
-              const SizedBox(height: 8),
-              Text(value, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-              Text(label, style: const TextStyle(color: Colors.grey)),
-            ],
-          ),
-        ),
+        ],
       ),
-    );
-  }
-}
-
-class _StudentsTab extends StatelessWidget {
-  const _StudentsTab();
-
-  @override
-  Widget build(BuildContext context) {
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance.collection('users').where('role', isEqualTo: 'student').snapshots(),
-      builder: (context, snapshot) {
-        if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
-        final docs = snapshot.data!.docs;
-        if (docs.isEmpty) return const Center(child: Text('دانش‌آموزی ثبت‌نام نکرده است.'));
-        return ListView.builder(
-          itemCount: docs.length,
-          itemBuilder: (context, i) {
-            final data = docs[i].data() as Map<String, dynamic>;
-            final online = data['onlineStatus'] == true;
-            return ListTile(
-              leading: CircleAvatar(
-                backgroundImage: data['avatar'] != null ? NetworkImage(data['avatar']) : null,
-                child: data['avatar'] == null ? const Icon(Icons.person) : null,
-              ),
-              title: Text(data['name'] ?? 'بدون نام'),
-              subtitle: Text('کلاس: ${data['class'] ?? '-'}'),
-              trailing: Icon(Icons.circle, size: 12, color: online ? Colors.green : Colors.grey),
-            );
-          },
-        );
-      },
-    );
-  }
-}
-
-class _LiveTab extends StatelessWidget {
-  const _LiveTab();
-
-  @override
-  Widget build(BuildContext context) {
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collectionGroup('activities')
-          .orderBy('timestamp', descending: true)
-          .limit(20)
-          .snapshots(),
-      builder: (context, snapshot) {
-        if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
-        final docs = snapshot.data!.docs;
-        if (docs.isEmpty) return const Center(child: Text('فعالیتی ثبت نشده است.'));
-        return ListView.builder(
-          itemCount: docs.length,
-          itemBuilder: (context, i) {
-            final data = docs[i].data() as Map<String, dynamic>;
-            return ListTile(
-              leading: const Icon(Icons.bolt, color: AppTheme.accentOrange),
-              title: Text(data['type'] ?? ''),
-              subtitle: Text('فصل: ${data['chapter'] ?? '-'}'),
-            );
-          },
-        );
-      },
-    );
-  }
-}
-
-class _AlertsTab extends StatelessWidget {
-  const _AlertsTab();
-
-  @override
-  Widget build(BuildContext context) {
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('users')
-          .where('role', isEqualTo: 'student')
-          .where('progressPercent', isLessThan: 30)
-          .snapshots(),
-      builder: (context, snapshot) {
-        final docs = snapshot.data?.docs ?? [];
-        if (docs.isEmpty) return const Center(child: Text('هشداری وجود ندارد. 👍'));
-        return ListView.builder(
-          itemCount: docs.length,
-          itemBuilder: (context, i) {
-            final data = docs[i].data() as Map<String, dynamic>;
-            return ListTile(
-              leading: const Icon(Icons.warning_amber, color: Colors.red),
-              title: Text(data['name'] ?? ''),
-              subtitle: const Text('پیشرفت کمتر از ۳۰٪'),
-            );
-          },
-        );
-      },
     );
   }
 }
