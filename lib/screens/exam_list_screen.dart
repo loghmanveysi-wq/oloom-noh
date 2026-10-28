@@ -1,4 +1,5 @@
 // فهرست فصل‌ها با بهترین نمره‌ی دانش‌آموز (داخل تب «رقابت» هم نمایش داده می‌شود)
+import '../widgets/app_background.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -12,7 +13,7 @@ class ExamListScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('آزمون‌ها')),
+      appBar: GAppBar(title: const Text('آزمون‌ها')),
       body: const ExamListBody(),
     );
   }
