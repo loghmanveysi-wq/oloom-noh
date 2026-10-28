@@ -1,4 +1,5 @@
 // داشبورد نظارتی دبیر: آمار کلی + لیست دانش‌آموزان + رصد لحظه‌ای
+import '../widgets/app_background.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -12,7 +13,7 @@ class AdminDashboardScreen extends StatelessWidget {
     return DefaultTabController(
       length: 4,
       child: Scaffold(
-        appBar: AppBar(
+        appBar: GAppBar(
           title: const Text('داشبورد دبیر'),
           bottom: const BoxedTabBar(
             labels: ['آمار کلی', 'دانش‌آموزان', 'رصد لحظه‌ای', 'هشدارها'],
