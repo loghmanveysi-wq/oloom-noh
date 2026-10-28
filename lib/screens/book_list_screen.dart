@@ -1,4 +1,5 @@
 // صفحه «کتاب»: نمایش و مطالعه فایل کامل کتاب علوم نهم
+import '../widgets/app_background.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../theme/app_theme.dart';
@@ -10,7 +11,8 @@ class BookListScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('کتاب علوم نهم')),
+      backgroundColor: Colors.transparent,
+      appBar: GAppBar(title: const Text('کتاب علوم نهم')),
       body: StreamBuilder<DocumentSnapshot>(
         stream: FirebaseFirestore.instance.collection('books').doc('full_book').snapshots(),
         builder: (context, snapshot) {
