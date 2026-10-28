@@ -1,5 +1,6 @@
 // صفحه آزمایشگاه مجازی: شبیه‌سازهای معتبر علوم (عمدتاً PhET دانشگاه کلرادو)
 // با کلیک روی هرکدام، در مرورگر گوشی باز می‌شود
+import '../widgets/app_background.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../theme/app_theme.dart';
@@ -78,7 +79,8 @@ class VirtualLabScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('آزمایشگاه مجازی')),
+      backgroundColor: Colors.transparent,
+      appBar: GAppBar(title: const Text('آزمایشگاه مجازی')),
       body: Column(
         children: [
           Container(
